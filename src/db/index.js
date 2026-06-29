@@ -1,17 +1,30 @@
-import db from './schema'
-import { TIPO_MOVIMIENTO, ESTADO_ENTREGA, ESTADO_STOCK } from '@/constants'
+import { supabase }                          from '@/lib/supabase'
+import { fromDB, manyFromDB, toDB, fromDBInventario } from '@/lib/mappers'
+import { ESTADO_STOCK }                       from '@/constants'
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  UTILIDAD INTERNA
 // ─────────────────────────────────────────────────────────────────────────────
 
-function nowISO() {
-  return new Date().toISOString()
+function err(ctx, error) {
+  console.error(`[GEPPI DB] ${ctx}:`, error)
+  throw new Error(`${ctx}: ${error?.message || error}`)
 }
 
-function err(contexto, error) {
-  console.error(`[GEPPI DB] ${contexto}:`, error)
-  throw new Error(`${contexto}: ${error.message || error}`)
+async function q(ctx, promise) {
+  const { data, error } = await promise
+  if (error) err(ctx, error)
+  return data
+}
+
+// Supabase lanza PGRST116 cuando .single() no encuentra fila — lo convertimos en null
+async function one(ctx, promise) {
+  const { data, error } = await promise
+  if (error) {
+    if (error.code === 'PGRST116') return null
+    err(ctx, error)
+  }
+  return data
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -20,30 +33,22 @@ function err(contexto, error) {
 
 export const empresaDB = {
   async getAll() {
-    try { return await db.empresa.toArray() }
-    catch (e) { err('empresa.getAll', e) }
+    const data = await q('empresa.getAll', supabase.from('empresa').select('*').order('id'))
+    return manyFromDB(data)
   },
-
   async getById(id) {
-    try { return await db.empresa.get(id) }
-    catch (e) { err('empresa.getById', e) }
+    const data = await one('empresa.getById', supabase.from('empresa').select('*').eq('id', id).single())
+    return fromDB(data)
   },
-
   async create(data) {
-    try {
-      const id = await db.empresa.add({ ...data, fechaCreacion: nowISO() })
-      return id
-    } catch (e) { err('empresa.create', e) }
+    const row = await one('empresa.create', supabase.from('empresa').insert(toDB(data)).select('id').single())
+    return row?.id
   },
-
   async update(id, data) {
-    try { await db.empresa.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('empresa.update', e) }
+    await q('empresa.update', supabase.from('empresa').update(toDB(data)).eq('id', id))
   },
-
   async remove(id) {
-    try { await db.empresa.delete(id) }
-    catch (e) { err('empresa.remove', e) }
+    await q('empresa.remove', supabase.from('empresa').delete().eq('id', id))
   },
 }
 
@@ -53,33 +58,26 @@ export const empresaDB = {
 
 export const sedeDB = {
   async getAll() {
-    try { return await db.sede.toArray() }
-    catch (e) { err('sede.getAll', e) }
+    const data = await q('sede.getAll', supabase.from('sede').select('*').order('id'))
+    return manyFromDB(data)
   },
-
   async getById(id) {
-    try { return await db.sede.get(id) }
-    catch (e) { err('sede.getById', e) }
+    const data = await one('sede.getById', supabase.from('sede').select('*').eq('id', id).single())
+    return fromDB(data)
   },
-
   async getPorEmpresa(empresaId) {
-    try { return await db.sede.where('empresaId').equals(empresaId).toArray() }
-    catch (e) { err('sede.getPorEmpresa', e) }
+    const data = await q('sede.getPorEmpresa', supabase.from('sede').select('*').eq('empresa_id', empresaId))
+    return manyFromDB(data)
   },
-
   async create(data) {
-    try { return await db.sede.add({ ...data, fechaCreacion: nowISO() }) }
-    catch (e) { err('sede.create', e) }
+    const row = await one('sede.create', supabase.from('sede').insert(toDB(data)).select('id').single())
+    return row?.id
   },
-
   async update(id, data) {
-    try { await db.sede.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('sede.update', e) }
+    await q('sede.update', supabase.from('sede').update(toDB(data)).eq('id', id))
   },
-
   async remove(id) {
-    try { await db.sede.delete(id) }
-    catch (e) { err('sede.remove', e) }
+    await q('sede.remove', supabase.from('sede').delete().eq('id', id))
   },
 }
 
@@ -89,33 +87,26 @@ export const sedeDB = {
 
 export const cargoDB = {
   async getAll() {
-    try { return await db.cargo.orderBy('nombre').toArray() }
-    catch (e) { err('cargo.getAll', e) }
+    const data = await q('cargo.getAll', supabase.from('cargo').select('*').order('nombre'))
+    return manyFromDB(data)
   },
-
   async getById(id) {
-    try { return await db.cargo.get(id) }
-    catch (e) { err('cargo.getById', e) }
+    const data = await one('cargo.getById', supabase.from('cargo').select('*').eq('id', id).single())
+    return fromDB(data)
   },
-
   async getActivos() {
-    try { return await db.cargo.where('estado').equals('ACTIVO').sortBy('nombre') }
-    catch (e) { err('cargo.getActivos', e) }
+    const data = await q('cargo.getActivos', supabase.from('cargo').select('*').eq('estado', 'ACTIVO').order('nombre'))
+    return manyFromDB(data)
   },
-
   async create(data) {
-    try { return await db.cargo.add({ ...data, estado: 'ACTIVO', fechaCreacion: nowISO() }) }
-    catch (e) { err('cargo.create', e) }
+    const row = await one('cargo.create', supabase.from('cargo').insert({ ...toDB(data), estado: 'ACTIVO' }).select('id').single())
+    return row?.id
   },
-
   async update(id, data) {
-    try { await db.cargo.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('cargo.update', e) }
+    await q('cargo.update', supabase.from('cargo').update(toDB(data)).eq('id', id))
   },
-
   async remove(id) {
-    try { await db.cargo.delete(id) }
-    catch (e) { err('cargo.remove', e) }
+    await q('cargo.remove', supabase.from('cargo').delete().eq('id', id))
   },
 }
 
@@ -125,117 +116,78 @@ export const cargoDB = {
 
 export const eppDB = {
   async getAll() {
-    try { return await db.epp.orderBy('item').toArray() }
-    catch (e) { err('epp.getAll', e) }
+    const data = await q('epp.getAll', supabase.from('epp').select('*').order('item'))
+    return manyFromDB(data)
   },
-
   async getById(id) {
-    try { return await db.epp.get(id) }
-    catch (e) { err('epp.getById', e) }
+    const data = await one('epp.getById', supabase.from('epp').select('*').eq('id', id).single())
+    return fromDB(data)
   },
-
   async getActivos() {
-    try { return await db.epp.where('estado').equals('ACTIVO').sortBy('item') }
-    catch (e) { err('epp.getActivos', e) }
+    const data = await q('epp.getActivos', supabase.from('epp').select('*').eq('estado', 'ACTIVO').order('item'))
+    return manyFromDB(data)
   },
-
   async create(data) {
-    try {
-      return await db.epp.add({
-        ...data,
-        estado:         'ACTIVO',
-        version:        data.version || 1,
-        fechaCreacion:  nowISO(),
-      })
-    } catch (e) { err('epp.create', e) }
+    const row = await one('epp.create', supabase.from('epp').insert({ ...toDB(data), estado: 'ACTIVO' }).select('id').single())
+    return row?.id
   },
-
   async update(id, data) {
-    try { await db.epp.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('epp.update', e) }
+    await q('epp.update', supabase.from('epp').update(toDB(data)).eq('id', id))
   },
-
   async remove(id) {
-    try { await db.epp.delete(id) }
-    catch (e) { err('epp.remove', e) }
+    await q('epp.remove', supabase.from('epp').delete().eq('id', id))
   },
-
   async bulkCreate(epps) {
-    try { return await db.epp.bulkAdd(epps, { allKeys: true }) }
-    catch (e) { err('epp.bulkCreate', e) }
+    const rows = epps.map(e => ({ ...toDB(e), estado: 'ACTIVO' }))
+    const data = await q('epp.bulkCreate', supabase.from('epp').insert(rows).select('id'))
+    return data?.map(r => r.id)
   },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  ASIGNACIÓN CARGO-EPP (Matriz por Cargos)
+//  ASIGNACIÓN CARGO-EPP
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const asignacionDB = {
   async getAll() {
-    try { return await db.asignacionCargoEpp.toArray() }
-    catch (e) { err('asignacion.getAll', e) }
+    const data = await q('asignacion.getAll', supabase.from('asignacion_cargo_epp').select('*'))
+    return manyFromDB(data)
   },
-
-  /** Devuelve los EPP asignados a un cargo específico */
   async getEppPorCargo(cargoId) {
-    try {
-      return await db.asignacionCargoEpp
-        .where('cargoId').equals(cargoId)
-        .filter(a => a.vigente !== false)
-        .toArray()
-    } catch (e) { err('asignacion.getEppPorCargo', e) }
+    const data = await q('asignacion.getEppPorCargo',
+      supabase.from('asignacion_cargo_epp').select('*').eq('cargo_id', cargoId).eq('vigente', true))
+    return manyFromDB(data)
   },
-
-  /** Devuelve los cargos que tienen asignado un EPP específico */
   async getCargosPorEpp(eppId) {
-    try {
-      return await db.asignacionCargoEpp
-        .where('eppId').equals(eppId)
-        .filter(a => a.vigente !== false)
-        .toArray()
-    } catch (e) { err('asignacion.getCargosPorEpp', e) }
+    const data = await q('asignacion.getCargosPorEpp',
+      supabase.from('asignacion_cargo_epp').select('*').eq('epp_id', eppId).eq('vigente', true))
+    return manyFromDB(data)
   },
-
   async getByCargoYEpp(cargoId, eppId) {
-    try {
-      return await db.asignacionCargoEpp
-        .where('[cargoId+eppId]').equals([cargoId, eppId])
-        .first()
-    } catch (e) { err('asignacion.getByCargoYEpp', e) }
+    const data = await one('asignacion.getByCargoYEpp',
+      supabase.from('asignacion_cargo_epp').select('*')
+        .eq('cargo_id', cargoId).eq('epp_id', eppId).single())
+    return fromDB(data)
   },
-
   async toggle(cargoId, eppId) {
-    try {
-      const existente = await db.asignacionCargoEpp
-        .where('[cargoId+eppId]').equals([cargoId, eppId]).first()
-
-      if (existente) {
-        await db.asignacionCargoEpp.update(existente.id, {
-          vigente: !existente.vigente,
-          fechaActualizacion: nowISO(),
-        })
-        return !existente.vigente
-      } else {
-        await db.asignacionCargoEpp.add({
-          cargoId, eppId,
-          vigente:          true,
-          obligatorio:      true,
-          cantidadEntrega:  1,
-          fechaCreacion:    nowISO(),
-        })
-        return true
-      }
-    } catch (e) { err('asignacion.toggle', e) }
+    const existente = await this.getByCargoYEpp(cargoId, eppId)
+    if (existente) {
+      await q('asignacion.toggle.update',
+        supabase.from('asignacion_cargo_epp').update({ vigente: !existente.vigente }).eq('id', existente.id))
+      return !existente.vigente
+    }
+    await q('asignacion.toggle.insert',
+      supabase.from('asignacion_cargo_epp').insert({ cargo_id: cargoId, epp_id: eppId, vigente: true }))
+    return true
   },
-
   async bulkCreate(asignaciones) {
-    try { return await db.asignacionCargoEpp.bulkAdd(asignaciones, { allKeys: true }) }
-    catch (e) { err('asignacion.bulkCreate', e) }
+    const rows = asignaciones.map(a => toDB(a))
+    const data = await q('asignacion.bulkCreate', supabase.from('asignacion_cargo_epp').insert(rows).select('id'))
+    return data?.map(r => r.id)
   },
-
   async limpiarPorCargo(cargoId) {
-    try { await db.asignacionCargoEpp.where('cargoId').equals(cargoId).delete() }
-    catch (e) { err('asignacion.limpiarPorCargo', e) }
+    await q('asignacion.limpiarPorCargo',
+      supabase.from('asignacion_cargo_epp').delete().eq('cargo_id', cargoId))
   },
 }
 
@@ -245,70 +197,44 @@ export const asignacionDB = {
 
 export const trabajadorDB = {
   async getAll() {
-    try { return await db.trabajador.toArray() }
-    catch (e) { err('trabajador.getAll', e) }
+    const data = await q('trabajador.getAll', supabase.from('trabajador').select('*').order('apellidos'))
+    return manyFromDB(data)
   },
-
   async getById(id) {
-    try { return await db.trabajador.get(id) }
-    catch (e) { err('trabajador.getById', e) }
+    const data = await one('trabajador.getById', supabase.from('trabajador').select('*').eq('id', id).single())
+    return fromDB(data)
   },
-
   async getByCedula(cedula) {
-    try { return await db.trabajador.where('cedula').equals(String(cedula)).first() }
-    catch (e) { err('trabajador.getByCedula', e) }
+    const data = await one('trabajador.getByCedula',
+      supabase.from('trabajador').select('*').eq('cedula', String(cedula)).single())
+    return fromDB(data)
   },
-
   async getTrabajadoresPorSede(sedeId) {
-    try {
-      return await db.trabajador
-        .where('sedeId').equals(sedeId)
-        .filter(t => t.estado === 'ACTIVO')
-        .toArray()
-    } catch (e) { err('trabajador.getTrabajadoresPorSede', e) }
+    const data = await q('trabajador.getPorSede',
+      supabase.from('trabajador').select('*').eq('sede_id', sedeId).eq('estado', 'ACTIVO'))
+    return manyFromDB(data)
   },
-
   async getTrabajadoresPorEmpresa(empresaId) {
-    try {
-      return await db.trabajador
-        .where('empresaId').equals(empresaId)
-        .filter(t => t.estado === 'ACTIVO')
-        .toArray()
-    } catch (e) { err('trabajador.getTrabajadoresPorEmpresa', e) }
+    const data = await q('trabajador.getPorEmpresa',
+      supabase.from('trabajador').select('*').eq('empresa_id', empresaId).eq('estado', 'ACTIVO'))
+    return manyFromDB(data)
   },
-
   async buscar(texto) {
-    try {
-      const q = texto.toLowerCase()
-      return await db.trabajador
-        .filter(t =>
-          t.nombres?.toLowerCase().includes(q) ||
-          t.apellidos?.toLowerCase().includes(q) ||
-          t.cedula?.includes(q)
-        )
-        .toArray()
-    } catch (e) { err('trabajador.buscar', e) }
+    const data = await q('trabajador.buscar',
+      supabase.from('trabajador').select('*')
+        .or(`nombres.ilike.%${texto}%,apellidos.ilike.%${texto}%,cedula.ilike.%${texto}%`))
+    return manyFromDB(data)
   },
-
   async create(data) {
-    try {
-      return await db.trabajador.add({
-        ...data,
-        cedula:        String(data.cedula),
-        estado:        'ACTIVO',
-        fechaCreacion: nowISO(),
-      })
-    } catch (e) { err('trabajador.create', e) }
+    const row = await one('trabajador.create',
+      supabase.from('trabajador').insert({ ...toDB(data), cedula: String(data.cedula), estado: 'ACTIVO' }).select('id').single())
+    return row?.id
   },
-
   async update(id, data) {
-    try { await db.trabajador.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('trabajador.update', e) }
+    await q('trabajador.update', supabase.from('trabajador').update(toDB(data)).eq('id', id))
   },
-
   async remove(id) {
-    try { await db.trabajador.update(id, { estado: 'INACTIVO', fechaActualizacion: nowISO() }) }
-    catch (e) { err('trabajador.remove', e) }
+    await q('trabajador.remove', supabase.from('trabajador').update({ estado: 'INACTIVO' }).eq('id', id))
   },
 }
 
@@ -318,112 +244,74 @@ export const trabajadorDB = {
 
 export const inventarioDB = {
   async getAll() {
-    try { return await db.inventario.toArray() }
-    catch (e) { err('inventario.getAll', e) }
+    const data = await q('inventario.getAll', supabase.from('inventario').select('*'))
+    return (data || []).map(fromDBInventario)
   },
-
   async getById(id) {
-    try { return await db.inventario.get(id) }
-    catch (e) { err('inventario.getById', e) }
+    const data = await one('inventario.getById', supabase.from('inventario').select('*').eq('id', id).single())
+    return fromDBInventario(data)
   },
-
-  /** Retorna el registro de stock para un EPP en una sede específica */
   async getStockActual(eppId, sedeId) {
-    try {
-      return await db.inventario
-        .where('[eppId+sedeId]').equals([eppId, sedeId])
-        .first()
-    } catch (e) { err('inventario.getStockActual', e) }
+    const data = await one('inventario.getStockActual',
+      supabase.from('inventario').select('*').eq('epp_id', eppId).eq('sede_id', sedeId).single())
+    return fromDBInventario(data)
   },
-
   async getPorSede(sedeId) {
-    try { return await db.inventario.where('sedeId').equals(sedeId).toArray() }
-    catch (e) { err('inventario.getPorSede', e) }
+    const data = await q('inventario.getPorSede',
+      supabase.from('inventario').select('*').eq('sede_id', sedeId))
+    return (data || []).map(fromDBInventario)
   },
-
-  /** Devuelve todos los EPP agotados (stock = 0) */
   async getAgotados() {
-    try { return await db.inventario.filter(i => i.stockActual === 0).toArray() }
-    catch (e) { err('inventario.getAgotados', e) }
+    const data = await q('inventario.getAgotados',
+      supabase.from('inventario').select('*').eq('cantidad', 0))
+    return (data || []).map(fromDBInventario)
   },
-
-  /** Devuelve los EPP con stock ≤ stock mínimo */
   async getBajoStock() {
-    try {
-      return await db.inventario
-        .filter(i => i.stockActual > 0 && i.stockActual <= (i.stockMinimo || 5))
-        .toArray()
-    } catch (e) { err('inventario.getBajoStock', e) }
+    // Filtro en cliente: stockActual > 0 && stockActual <= stockMinimo
+    const all = await this.getAll()
+    return all.filter(i => i.stockActual > 0 && i.stockActual <= (i.stockMinimo || 5))
   },
-
   async create(data) {
-    try {
-      return await db.inventario.add({
-        stockMinimo:           5,
-        unidadMedida:          'Unidad',
-        ...data,
-        fechaUltimaActualizacion: nowISO(),
-      })
-    } catch (e) { err('inventario.create', e) }
+    const row = await one('inventario.create',
+      supabase.from('inventario').insert({
+        epp_id: data.eppId, sede_id: data.sedeId,
+        cantidad: data.stockActual ?? 0,
+        stock_minimo: data.stockMinimo ?? 5,
+      }).select('id').single())
+    return row?.id
   },
-
   async update(id, data) {
-    try {
-      await db.inventario.update(id, {
-        ...data,
-        fechaUltimaActualizacion: nowISO(),
-      })
-    } catch (e) { err('inventario.update', e) }
+    const dbData = {}
+    if (data.stockActual !== undefined) dbData.cantidad    = data.stockActual
+    if (data.stockMinimo !== undefined) dbData.stock_minimo = data.stockMinimo
+    await q('inventario.update', supabase.from('inventario').update(dbData).eq('id', id))
   },
-
-  /** Ajuste de stock: suma o resta delta, crea movimiento */
   async ajustarStock(eppId, sedeId, delta, tipo, meta = {}) {
-    try {
-      return await db.transaction('rw', db.inventario, db.movimientoInventario, async () => {
-        let registro = await db.inventario
-          .where('[eppId+sedeId]').equals([eppId, sedeId]).first()
+    let registro = await this.getStockActual(eppId, sedeId)
 
-        if (!registro) {
-          const id = await db.inventario.add({
-            eppId, sedeId,
-            stockActual:              Math.max(0, delta),
-            stockMinimo:              5,
-            unidadMedida:             'Unidad',
-            fechaUltimaActualizacion: nowISO(),
-          })
-          registro = await db.inventario.get(id)
-        }
+    if (!registro) {
+      const id = await this.create({ eppId, sedeId, stockActual: Math.max(0, delta), stockMinimo: 5 })
+      registro = { id, stockActual: Math.max(0, delta), stockMinimo: 5, eppId, sedeId }
+    }
 
-        const saldoAnterior  = registro.stockActual
-        const saldoPosterior = Math.max(0, saldoAnterior + delta)
+    const saldoAnterior  = registro.stockActual
+    const saldoPosterior = Math.max(0, saldoAnterior + delta)
 
-        await db.inventario.update(registro.id, {
-          stockActual:              saldoPosterior,
-          fechaUltimaActualizacion: nowISO(),
-        })
+    await this.update(registro.id, { stockActual: saldoPosterior })
 
-        const movId = await db.movimientoInventario.add({
-          inventarioId:        registro.id,
-          eppId,
-          sedeId,
-          tipo,
-          cantidad:            Math.abs(delta),
-          saldoAnterior,
-          saldoPosterior,
-          fecha:               nowISO(),
-          proveedor:           meta.proveedor     || null,
-          costoUnitario:       meta.costoUnitario || null,
-          motivoAjuste:        meta.motivo        || null,
-          referenciaEntregaId: meta.entregaId     || null,
-          usuarioId:           meta.usuarioId     || null,
-        })
+    const { data: mov } = await supabase.from('movimiento_inventario').insert({
+      inventario_id:          registro.id,
+      epp_id:                 eppId,
+      sede_id:                sedeId,
+      tipo,
+      cantidad:               Math.abs(delta),
+      referencia_entrega_id:  meta.entregaId  || null,
+      observacion:            meta.motivo     || null,
+      usuario_id:             meta.usuarioId  || null,
+    }).select('id').single()
 
-        return { saldoPosterior, movimientoId: movId }
-      })
-    } catch (e) { err('inventario.ajustarStock', e) }
+    return { saldoPosterior, movimientoId: mov?.id }
   },
-
-  /** Estado semáforo del stock */
   getEstadoStock(registro) {
     if (!registro) return ESTADO_STOCK.AGOTADO
     if (registro.stockActual === 0) return ESTADO_STOCK.AGOTADO
@@ -438,27 +326,17 @@ export const inventarioDB = {
 
 export const movimientoDB = {
   async getPorEppYSede(eppId, sedeId, desde, hasta) {
-    try {
-      let query = db.movimientoInventario
-        .where('[eppId+sedeId]').equals([eppId, sedeId])
-      const resultado = await query.toArray()
-      if (desde || hasta) {
-        return resultado.filter(m => {
-          const f = new Date(m.fecha)
-          if (desde && f < new Date(desde)) return false
-          if (hasta && f > new Date(hasta)) return false
-          return true
-        })
-      }
-      return resultado.sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-    } catch (e) { err('movimiento.getPorEppYSede', e) }
+    let query = supabase.from('movimiento_inventario').select('*')
+      .eq('epp_id', eppId).eq('sede_id', sedeId).order('fecha', { ascending: false })
+    if (desde) query = query.gte('fecha', desde)
+    if (hasta) query = query.lte('fecha', hasta)
+    const data = await q('movimiento.getPorEppYSede', query)
+    return manyFromDB(data)
   },
-
   async getPorEntrega(entregaId) {
-    try {
-      return await db.movimientoInventario
-        .where('referenciaEntregaId').equals(entregaId).toArray()
-    } catch (e) { err('movimiento.getPorEntrega', e) }
+    const data = await q('movimiento.getPorEntrega',
+      supabase.from('movimiento_inventario').select('*').eq('referencia_entrega_id', entregaId))
+    return manyFromDB(data)
   },
 }
 
@@ -468,164 +346,105 @@ export const movimientoDB = {
 
 export const entregaDB = {
   async getAll() {
-    try { return await db.entrega.reverse().toArray() }
-    catch (e) { err('entrega.getAll', e) }
+    const data = await q('entrega.getAll',
+      supabase.from('entrega').select('*').order('id', { ascending: false }))
+    return manyFromDB(data)
   },
-
   async getById(id) {
-    try { return await db.entrega.get(id) }
-    catch (e) { err('entrega.getById', e) }
+    const data = await one('entrega.getById', supabase.from('entrega').select('*').eq('id', id).single())
+    return fromDB(data)
   },
-
   async getEntregasPorTrabajador(trabajadorId) {
-    try {
-      return await db.entrega
-        .where('trabajadorId').equals(trabajadorId)
-        .reverse()
-        .sortBy('fechaEntrega')
-    } catch (e) { err('entrega.getEntregasPorTrabajador', e) }
+    const data = await q('entrega.getPorTrabajador',
+      supabase.from('entrega').select('*').eq('trabajador_id', trabajadorId).order('fecha_entrega', { ascending: false }))
+    return manyFromDB(data)
   },
-
   async getUltimaEntregaEppTrabajador(trabajadorId, eppId) {
-    try {
-      const detalles = await db.detalleEntrega
-        .where('eppId').equals(eppId).toArray()
-
-      const entregas = await db.entrega
-        .where('trabajadorId').equals(trabajadorId)
-        .filter(e => e.estado === ESTADO_ENTREGA.FIRMADA)
-        .toArray()
-
-      const idsEntregas = new Set(entregas.map(e => e.id))
-
-      const detalle = detalles
-        .filter(d => idsEntregas.has(d.entregaId))
-        .sort((a, b) => new Date(b.fechaVencimiento) - new Date(a.fechaVencimiento))[0]
-
-      return detalle || null
-    } catch (e) { err('entrega.getUltimaEntregaEppTrabajador', e) }
+    const entregas = await this.getEntregasPorTrabajador(trabajadorId)
+    const idsFirmadas = entregas.filter(e => e.estado === 'FIRMADA').map(e => e.id)
+    if (!idsFirmadas.length) return null
+    const data = await one('entrega.getUltimaDetalle',
+      supabase.from('detalle_entrega').select('*')
+        .eq('epp_id', eppId).in('entrega_id', idsFirmadas)
+        .order('fecha_vencimiento', { ascending: false }).limit(1).single())
+    return fromDB(data)
   },
-
-  /** Crea la entrega, descuenta inventario y guarda firma en una transacción atómica */
-  async confirmar({ trabajador, cargo, epps, observaciones, responsable, firmaBase64, usuarioId }) {
-    try {
-      return await db.transaction(
-        'rw',
-        db.entrega,
-        db.detalleEntrega,
-        db.firma,
-        db.inventario,
-        db.movimientoInventario,
-        async () => {
-          // 1. Crear cabecera de entrega
-          const entregaId = await db.entrega.add({
-            trabajadorId:     trabajador.id,
-            cargoId:          cargo.id,
-            sedeId:           trabajador.sedeId,
-            empresaId:        trabajador.empresaId,
-            fechaEntrega:     nowISO(),
-            estado:           ESTADO_ENTREGA.FIRMADA,
-            observaciones:    observaciones || null,
-            responsableNombre: responsable,
-            usuarioEntregaId: usuarioId || null,
-            pdfGenerado:      false,
-          })
-
-          // 2. Crear detalle por cada EPP
-          for (const item of epps) {
-            await db.detalleEntrega.add({
-              entregaId,
-              eppId:            item.eppId,
-              cantidad:         item.cantidad,
-              vidaUtilDias:     item.vidaUtilDias || 0,
-              fechaVencimiento: item.fechaVencimiento || null,
-              disposicionFinal: item.disposicionFinal || null,
-              observaciones:    item.observaciones || null,
-            })
-
-            // 3. Descontar inventario
-            const registro = await db.inventario
-              .where('[eppId+sedeId]').equals([item.eppId, trabajador.sedeId]).first()
-
-            if (registro) {
-              const saldoAnterior  = registro.stockActual
-              const saldoPosterior = Math.max(0, saldoAnterior - item.cantidad)
-
-              await db.inventario.update(registro.id, {
-                stockActual:              saldoPosterior,
-                fechaUltimaActualizacion: nowISO(),
-              })
-
-              await db.movimientoInventario.add({
-                inventarioId:        registro.id,
-                eppId:               item.eppId,
-                sedeId:              trabajador.sedeId,
-                tipo:                TIPO_MOVIMIENTO.SALIDA,
-                cantidad:            item.cantidad,
-                saldoAnterior,
-                saldoPosterior,
-                referenciaEntregaId: entregaId,
-                fecha:               nowISO(),
-                usuarioId:           usuarioId || null,
-              })
-            }
-          }
-
-          // 4. Guardar firma digital
-          await db.firma.add({
-            entregaId,
-            firmaBase64,
-            fechaCaptura: nowISO(),
-            dispositivo:  navigator.userAgent || 'Desconocido',
-          })
-
-          return entregaId
-        }
-      )
-    } catch (e) { err('entrega.confirmar', e) }
-  },
-
-  async anular(id, motivo, usuarioId) {
-    try {
-      await db.entrega.update(id, {
-        estado:            ESTADO_ENTREGA.ANULADA,
-        motivoAnulacion:   motivo,
-        fechaAnulacion:    nowISO(),
-        usuarioAnulacionId: usuarioId || null,
-      })
-    } catch (e) { err('entrega.anular', e) }
-  },
-
-  async marcarPdfGenerado(id) {
-    try { await db.entrega.update(id, { pdfGenerado: true }) }
-    catch (e) { err('entrega.marcarPdfGenerado', e) }
-  },
-
   async getByToken(token) {
-    try { return await db.entrega.where('tokenAceptacion').equals(token).first() }
-    catch (e) { err('entrega.getByToken', e) }
+    const data = await one('entrega.getByToken',
+      supabase.from('entrega').select('*').eq('token_aceptacion', token).single())
+    return fromDB(data)
   },
+  async confirmar({ trabajador, cargo, epps, observaciones, responsable, firmaBase64, usuarioId }) {
+    // 1. Crear entrega
+    const entregaRow = await one('entrega.confirmar.cabecera',
+      supabase.from('entrega').insert({
+        trabajador_id:      trabajador.id,
+        cargo_id:           cargo.id,
+        sede_id:            trabajador.sedeId,
+        empresa_id:         trabajador.empresaId,
+        fecha_entrega:      new Date().toISOString().slice(0, 10),
+        estado:             'FIRMADA',
+        observaciones:      observaciones || null,
+        usuario_id:         usuarioId || null,
+      }).select('id').single())
+    const entregaId = entregaRow.id
 
+    // 2. Detalle + descuento inventario
+    for (const item of epps) {
+      await q('entrega.confirmar.detalle',
+        supabase.from('detalle_entrega').insert({
+          entrega_id:       entregaId,
+          epp_id:           item.eppId,
+          cantidad:         item.cantidad,
+          fecha_vencimiento: item.fechaVencimiento || null,
+          observacion:      item.observaciones    || null,
+        }))
+      await inventarioDB.ajustarStock(
+        item.eppId, trabajador.sedeId, -item.cantidad, 'SALIDA',
+        { entregaId, usuarioId }
+      )
+    }
+
+    // 3. Firma
+    await q('entrega.confirmar.firma',
+      supabase.from('firma').insert({
+        entrega_id:   entregaId,
+        firma_base64: firmaBase64,
+        fecha_captura: new Date().toISOString(),
+        dispositivo:  navigator.userAgent || 'Desconocido',
+      }))
+
+    return entregaId
+  },
+  async anular(id, motivo) {
+    await q('entrega.anular',
+      supabase.from('entrega').update({
+        estado:           'ANULADA',
+        observaciones:    motivo,
+        fecha_aceptacion: new Date().toISOString(),
+      }).eq('id', id))
+  },
+  async marcarPdfGenerado(id) {
+    // campo legacy — no existe en v2, ignorar silenciosamente
+  },
   async aceptarConToken(token, firmaBase64) {
-    try {
-      return await db.transaction('rw', db.entrega, db.firma, async () => {
-        const entrega = await db.entrega.where('tokenAceptacion').equals(token).first()
-        if (!entrega) throw new Error('Token inválido o ya expirado.')
-        if (entrega.estado === 'FIRMADA') throw new Error('Esta entrega ya fue aceptada.')
-        await db.entrega.update(entrega.id, {
-          estado:          'FIRMADA',
-          fechaAceptacion: nowISO(),
-        })
-        await db.firma.add({
-          entregaId:    entrega.id,
-          firmaBase64,
-          fechaCaptura: nowISO(),
-          dispositivo:  navigator.userAgent || 'Desconocido',
-          origenQR:     true,
-        })
-        return entrega.id
-      })
-    } catch (e) { err('entrega.aceptarConToken', e) }
+    const entrega = await this.getByToken(token)
+    if (!entrega) throw new Error('Token inválido o ya expirado.')
+    if (entrega.estado === 'FIRMADA') throw new Error('Esta entrega ya fue aceptada.')
+    await q('entrega.aceptarConToken.update',
+      supabase.from('entrega').update({
+        estado:           'FIRMADA',
+        fecha_aceptacion: new Date().toISOString(),
+      }).eq('token_aceptacion', token))
+    await q('entrega.aceptarConToken.firma',
+      supabase.from('firma').insert({
+        entrega_id:   entrega.id,
+        firma_base64: firmaBase64,
+        fecha_captura: new Date().toISOString(),
+        dispositivo:  navigator.userAgent || 'Desconocido',
+        origen_qr:    true,
+      }))
+    return entrega.id
   },
 }
 
@@ -635,24 +454,18 @@ export const entregaDB = {
 
 export const detalleEntregaDB = {
   async getPorEntrega(entregaId) {
-    try { return await db.detalleEntrega.where('entregaId').equals(entregaId).toArray() }
-    catch (e) { err('detalleEntrega.getPorEntrega', e) }
+    const data = await q('detalle.getPorEntrega',
+      supabase.from('detalle_entrega').select('*').eq('entrega_id', entregaId))
+    return manyFromDB(data)
   },
-
-  /** Todos los detalles activos con fecha de vencimiento próxima */
   async getProximosAVencer(diasMax) {
-    try {
-      const limite = new Date()
-      limite.setDate(limite.getDate() + diasMax)
-
-      return await db.detalleEntrega
-        .filter(d => {
-          if (!d.fechaVencimiento) return false
-          const fv = new Date(d.fechaVencimiento)
-          return fv <= limite
-        })
-        .toArray()
-    } catch (e) { err('detalleEntrega.getProximosAVencer', e) }
+    const limite = new Date()
+    limite.setDate(limite.getDate() + diasMax)
+    const data = await q('detalle.getProximosAVencer',
+      supabase.from('detalle_entrega').select('*')
+        .not('fecha_vencimiento', 'is', null)
+        .lte('fecha_vencimiento', limite.toISOString().slice(0, 10)))
+    return manyFromDB(data)
   },
 }
 
@@ -662,8 +475,9 @@ export const detalleEntregaDB = {
 
 export const firmaDB = {
   async getPorEntrega(entregaId) {
-    try { return await db.firma.where('entregaId').equals(entregaId).first() }
-    catch (e) { err('firma.getPorEntrega', e) }
+    const data = await one('firma.getPorEntrega',
+      supabase.from('firma').select('*').eq('entrega_id', entregaId).single())
+    return fromDB(data)
   },
 }
 
@@ -673,54 +487,42 @@ export const firmaDB = {
 
 export const alertaDB = {
   async getAll() {
-    try { return await db.alerta.reverse().toArray() }
-    catch (e) { err('alerta.getAll', e) }
+    const data = await q('alerta.getAll',
+      supabase.from('alerta').select('*').order('id', { ascending: false }))
+    return manyFromDB(data)
   },
-
   async getNoLeidas() {
-    try { return await db.alerta.where('leida').equals(0).reverse().toArray() }
-    catch (e) { err('alerta.getNoLeidas', e) }
+    const data = await q('alerta.getNoLeidas',
+      supabase.from('alerta').select('*').eq('leida', false).order('id', { ascending: false }))
+    return manyFromDB(data)
   },
-
   async contarNoLeidas() {
-    try { return await db.alerta.where('leida').equals(0).count() }
-    catch (e) { err('alerta.contarNoLeidas', e) }
+    const { count } = await supabase.from('alerta').select('id', { count: 'exact', head: true }).eq('leida', false)
+    return count || 0
   },
-
   async existeAlertaActiva(tipo, referenciaId) {
-    try {
-      return await db.alerta
-        .where('[tipo+referenciaId]').equals([tipo, String(referenciaId)])
-        .filter(a => !a.leida)
-        .count() > 0
-    } catch (e) { err('alerta.existeAlertaActiva', e) }
+    const { count } = await supabase.from('alerta').select('id', { count: 'exact', head: true })
+      .eq('tipo', tipo).eq('referencia_id', String(referenciaId)).eq('leida', false)
+    return (count || 0) > 0
   },
-
   async create(data) {
-    try {
-      return await db.alerta.add({
-        ...data,
-        leida:            0,
-        fechaGeneracion:  nowISO(),
-        referenciaId:     String(data.referenciaId || ''),
-      })
-    } catch (e) { err('alerta.create', e) }
+    const row = await one('alerta.create',
+      supabase.from('alerta').insert({
+        ...toDB(data),
+        leida:           false,
+        fecha_generacion: new Date().toISOString(),
+        referencia_id:   String(data.referenciaId || ''),
+      }).select('id').single())
+    return row?.id
   },
-
   async marcarLeida(id) {
-    try { await db.alerta.update(id, { leida: 1, fechaLectura: nowISO() }) }
-    catch (e) { err('alerta.marcarLeida', e) }
+    await q('alerta.marcarLeida', supabase.from('alerta').update({ leida: true }).eq('id', id))
   },
-
   async marcarTodasLeidas() {
-    try {
-      await db.alerta.where('leida').equals(0).modify({ leida: 1, fechaLectura: nowISO() })
-    } catch (e) { err('alerta.marcarTodasLeidas', e) }
+    await q('alerta.marcarTodasLeidas', supabase.from('alerta').update({ leida: true }).eq('leida', false))
   },
-
   async remove(id) {
-    try { await db.alerta.delete(id) }
-    catch (e) { err('alerta.remove', e) }
+    await q('alerta.remove', supabase.from('alerta').delete().eq('id', id))
   },
 }
 
@@ -730,18 +532,19 @@ export const alertaDB = {
 
 export const gestionCambioDB = {
   async getAll() {
-    try { return await db.gestionCambio.orderBy('fecha').reverse().toArray() }
-    catch (e) { err('gestionCambio.getAll', e) }
+    const data = await q('gestionCambio.getAll',
+      supabase.from('gestion_cambio').select('*').order('fecha', { ascending: false }))
+    return manyFromDB(data)
   },
-
   async create(data) {
-    try { return await db.gestionCambio.add({ ...data, fecha: data.fecha || nowISO() }) }
-    catch (e) { err('gestionCambio.create', e) }
+    const row = await one('gestionCambio.create',
+      supabase.from('gestion_cambio').insert(toDB(data)).select('id').single())
+    return row?.id
   },
-
   async bulkCreate(registros) {
-    try { return await db.gestionCambio.bulkAdd(registros, { allKeys: true }) }
-    catch (e) { err('gestionCambio.bulkCreate', e) }
+    const data = await q('gestionCambio.bulkCreate',
+      supabase.from('gestion_cambio').insert(registros.map(toDB)).select('id'))
+    return data?.map(r => r.id)
   },
 }
 
@@ -751,37 +554,25 @@ export const gestionCambioDB = {
 
 export const auditoriaDB = {
   async getAll(filtros = {}) {
-    try {
-      let query = db.auditoria.reverse()
-      const todos = await query.toArray()
-      return todos.filter(a => {
-        if (filtros.modulo && a.modulo !== filtros.modulo) return false
-        if (filtros.accion && a.accion !== filtros.accion) return false
-        if (filtros.desde && new Date(a.fecha) < new Date(filtros.desde)) return false
-        if (filtros.hasta && new Date(a.fecha) > new Date(filtros.hasta)) return false
-        return true
-      })
-    } catch (e) { err('auditoria.getAll', e) }
+    let query = supabase.from('auditoria').select('*').order('id', { ascending: false }).limit(1000)
+    if (filtros.modulo) query = query.eq('modulo', filtros.modulo)
+    if (filtros.accion) query = query.eq('accion', filtros.accion)
+    if (filtros.desde)  query = query.gte('fecha', filtros.desde)
+    if (filtros.hasta)  query = query.lte('fecha', filtros.hasta)
+    const data = await q('auditoria.getAll', query)
+    return manyFromDB(data)
   },
-
   async registrar(modulo, accion, detalle, referenciaId = null, usuarioId = null) {
     try {
-      await db.auditoria.add({
-        modulo, accion, detalle,
-        referenciaId: referenciaId ? String(referenciaId) : null,
-        usuarioId,
-        fecha: nowISO(),
+      await supabase.from('auditoria').insert({
+        modulo, accion,
+        detalle:       detalle || null,
+        referencia_id: referenciaId ? String(referenciaId) : null,
+        usuario_id:    usuarioId || null,
+        fecha:         new Date().toISOString(),
       })
-      // Mantener solo los últimos 1000 registros
-      const total = await db.auditoria.count()
-      if (total > 1000) {
-        const sobra = total - 1000
-        const ids = await db.auditoria.orderBy('id').limit(sobra).primaryKeys()
-        await db.auditoria.bulkDelete(ids)
-      }
-    } catch (e) {
-      // La auditoría nunca debe bloquear el flujo principal
-      console.warn('[GEPPI] No se pudo registrar auditoría:', e)
+    } catch {
+      console.warn('[GEPPI] No se pudo registrar auditoría')
     }
   },
 }
@@ -792,35 +583,20 @@ export const auditoriaDB = {
 
 export const usuarioDB = {
   async getAll() {
-    try { return await db.usuario.toArray() }
-    catch (e) { err('usuario.getAll', e) }
+    const data = await q('usuario.getAll', supabase.from('usuario').select('*'))
+    return manyFromDB(data)
   },
-
   async getById(id) {
-    try { return await db.usuario.get(id) }
-    catch (e) { err('usuario.getById', e) }
+    const data = await one('usuario.getById', supabase.from('usuario').select('*').eq('id', id).single())
+    return fromDB(data)
   },
-
   async getByCorreo(correo) {
-    try { return await db.usuario.where('correo').equals(correo.toLowerCase()).first() }
-    catch (e) { err('usuario.getByCorreo', e) }
+    const data = await one('usuario.getByCorreo',
+      supabase.from('usuario').select('*').eq('correo', correo.toLowerCase()).single())
+    return fromDB(data)
   },
-
-  async create(data) {
-    try {
-      return await db.usuario.add({
-        ...data,
-        correo:        data.correo.toLowerCase(),
-        estado:        'ACTIVO',
-        ultimoAcceso:  null,
-        fechaCreacion: nowISO(),
-      })
-    } catch (e) { err('usuario.create', e) }
-  },
-
   async update(id, data) {
-    try { await db.usuario.update(id, data) }
-    catch (e) { err('usuario.update', e) }
+    await q('usuario.update', supabase.from('usuario').update(toDB(data)).eq('id', id))
   },
 }
 
@@ -830,47 +606,32 @@ export const usuarioDB = {
 
 export const vehiculoDB = {
   async getAll() {
-    try { return await db.vehiculo.toArray() }
-    catch (e) { err('vehiculo.getAll', e) }
+    const data = await q('vehiculo.getAll', supabase.from('vehiculo').select('*'))
+    return manyFromDB(data)
   },
-
   async getActivos() {
-    try { return await db.vehiculo.where('estado').equals('ACTIVO').toArray() }
-    catch (e) { err('vehiculo.getActivos', e) }
+    const data = await q('vehiculo.getActivos', supabase.from('vehiculo').select('*').eq('estado', 'ACTIVO'))
+    return manyFromDB(data)
   },
-
   async getPorEmpresa(empresaId) {
-    try {
-      return await db.vehiculo
-        .where('[empresaId+estado]').equals([empresaId, 'ACTIVO']).toArray()
-    } catch (e) { err('vehiculo.getPorEmpresa', e) }
+    const data = await q('vehiculo.getPorEmpresa',
+      supabase.from('vehiculo').select('*').eq('empresa_id', empresaId).eq('estado', 'ACTIVO'))
+    return manyFromDB(data)
   },
-
   async getById(id) {
-    try { return await db.vehiculo.get(id) }
-    catch (e) { err('vehiculo.getById', e) }
+    const data = await one('vehiculo.getById', supabase.from('vehiculo').select('*').eq('id', id).single())
+    return fromDB(data)
   },
-
   async create(data) {
-    try {
-      return await db.vehiculo.add({
-        ...data,
-        placa:         String(data.placa).toUpperCase().trim(),
-        estado:        'ACTIVO',
-        fechaCreacion: nowISO(),
-      })
-    } catch (e) { err('vehiculo.create', e) }
+    const row = await one('vehiculo.create',
+      supabase.from('vehiculo').insert({ ...toDB(data), placa: String(data.placa).toUpperCase().trim(), estado: 'ACTIVO' }).select('id').single())
+    return row?.id
   },
-
   async update(id, data) {
-    try {
-      await db.vehiculo.update(id, { ...data, fechaActualizacion: nowISO() })
-    } catch (e) { err('vehiculo.update', e) }
+    await q('vehiculo.update', supabase.from('vehiculo').update(toDB(data)).eq('id', id))
   },
-
   async desactivar(id) {
-    try { await db.vehiculo.update(id, { estado: 'INACTIVO', fechaActualizacion: nowISO() }) }
-    catch (e) { err('vehiculo.desactivar', e) }
+    await q('vehiculo.desactivar', supabase.from('vehiculo').update({ estado: 'INACTIVO' }).eq('id', id))
   },
 }
 
@@ -880,55 +641,39 @@ export const vehiculoDB = {
 
 export const checklistDB = {
   async getAll() {
-    try { return await db.checklistPreoperacional.reverse().toArray() }
-    catch (e) { err('checklist.getAll', e) }
+    const data = await q('checklist.getAll',
+      supabase.from('checklist_preoperacional').select('*').order('id', { ascending: false }))
+    return manyFromDB(data)
   },
-
   async getById(id) {
-    try { return await db.checklistPreoperacional.get(id) }
-    catch (e) { err('checklist.getById', e) }
+    const data = await one('checklist.getById',
+      supabase.from('checklist_preoperacional').select('*').eq('id', id).single())
+    return fromDB(data)
   },
-
   async getPorEmpresa(empresaId) {
-    try {
-      return await db.checklistPreoperacional
-        .where('empresaId').equals(empresaId).reverse().toArray()
-    } catch (e) { err('checklist.getPorEmpresa', e) }
+    const data = await q('checklist.getPorEmpresa',
+      supabase.from('checklist_preoperacional').select('*').eq('empresa_id', empresaId).order('id', { ascending: false }))
+    return manyFromDB(data)
   },
-
   async getPorVehiculo(vehiculoId) {
-    try {
-      return await db.checklistPreoperacional
-        .where('vehiculoId').equals(vehiculoId).reverse().toArray()
-    } catch (e) { err('checklist.getPorVehiculo', e) }
+    const data = await q('checklist.getPorVehiculo',
+      supabase.from('checklist_preoperacional').select('*').eq('vehiculo_id', vehiculoId).order('id', { ascending: false }))
+    return manyFromDB(data)
   },
-
-  async getPorConductor(conductorCedula) {
-    try {
-      return await db.checklistPreoperacional
-        .where('conductorCedula').equals(conductorCedula).reverse().toArray()
-    } catch (e) { err('checklist.getPorConductor', e) }
-  },
-
   async filtrar({ empresaId, vehiculoId, conductorCedula, desde, hasta } = {}) {
-    try {
-      let todos = await db.checklistPreoperacional.reverse().toArray()
-      if (empresaId)      todos = todos.filter(c => c.empresaId === empresaId)
-      if (vehiculoId)     todos = todos.filter(c => c.vehiculoId === vehiculoId)
-      if (conductorCedula) todos = todos.filter(c => c.conductorCedula === conductorCedula)
-      if (desde) todos = todos.filter(c => c.fecha >= desde)
-      if (hasta) todos = todos.filter(c => c.fecha <= hasta)
-      return todos
-    } catch (e) { err('checklist.filtrar', e) }
+    let query = supabase.from('checklist_preoperacional').select('*').order('id', { ascending: false })
+    if (empresaId)       query = query.eq('empresa_id', empresaId)
+    if (vehiculoId)      query = query.eq('vehiculo_id', vehiculoId)
+    if (conductorCedula) query = query.eq('conductor_cedula', conductorCedula)
+    if (desde) query = query.gte('fecha', desde)
+    if (hasta) query = query.lte('fecha', hasta)
+    const data = await q('checklist.filtrar', query)
+    return manyFromDB(data)
   },
-
   async create(data) {
-    try {
-      return await db.checklistPreoperacional.add({
-        ...data,
-        fechaCreacion: nowISO(),
-      })
-    } catch (e) { err('checklist.create', e) }
+    const row = await one('checklist.create',
+      supabase.from('checklist_preoperacional').insert(toDB(data)).select('id').single())
+    return row?.id
   },
 }
 
@@ -938,44 +683,32 @@ export const checklistDB = {
 
 export const planTrabajoDB = {
   async getAll() {
-    try { return await db.planTrabajo.toArray() }
-    catch (e) { err('planTrabajo.getAll', e) }
+    const data = await q('planTrabajo.getAll', supabase.from('plan_trabajo').select('*'))
+    return manyFromDB(data)
   },
-
   async getByAño(año) {
-    try { return await db.planTrabajo.where('año').equals(año).toArray() }
-    catch (e) { err('planTrabajo.getByAño', e) }
+    const data = await q('planTrabajo.getByAño', supabase.from('plan_trabajo').select('*').eq('año', año))
+    return manyFromDB(data)
   },
-
   async create(data) {
-    try {
-      return await db.planTrabajo.add({
-        ...data,
-        estado: data.estado || 'PENDIENTE',
-        año: data.año || new Date().getFullYear(),
-        fechaCreacion: nowISO(),
-      })
-    } catch (e) { err('planTrabajo.create', e) }
+    const row = await one('planTrabajo.create',
+      supabase.from('plan_trabajo').insert(toDB({ ...data, estado: data.estado || 'PENDIENTE', año: data.año || new Date().getFullYear() })).select('id').single())
+    return row?.id
   },
-
   async update(id, data) {
-    try { await db.planTrabajo.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('planTrabajo.update', e) }
+    await q('planTrabajo.update', supabase.from('plan_trabajo').update(toDB(data)).eq('id', id))
   },
-
   async remove(id) {
-    try { await db.planTrabajo.delete(id) }
-    catch (e) { err('planTrabajo.remove', e) }
+    await q('planTrabajo.remove', supabase.from('plan_trabajo').delete().eq('id', id))
   },
-
   async bulkCreate(actividades) {
-    try { return await db.planTrabajo.bulkAdd(actividades, { allKeys: true }) }
-    catch (e) { err('planTrabajo.bulkCreate', e) }
+    const data = await q('planTrabajo.bulkCreate',
+      supabase.from('plan_trabajo').insert(actividades.map(toDB)).select('id'))
+    return data?.map(r => r.id)
   },
-
   async count() {
-    try { return await db.planTrabajo.count() }
-    catch (e) { err('planTrabajo.count', e) }
+    const { count } = await supabase.from('plan_trabajo').select('id', { count: 'exact', head: true })
+    return count || 0
   },
 }
 
@@ -985,218 +718,192 @@ export const planTrabajoDB = {
 
 export const condicionesDB = {
   async getAll() {
-    try { return await db.condicionInsegura.toArray() }
-    catch (e) { err('condiciones.getAll', e) }
+    const data = await q('condiciones.getAll', supabase.from('condicion_insegura').select('*'))
+    return manyFromDB(data)
   },
   async create(data) {
-    try { return await db.condicionInsegura.add({ ...data, fechaCreacion: nowISO() }) }
-    catch (e) { err('condiciones.create', e) }
+    const row = await one('condiciones.create',
+      supabase.from('condicion_insegura').insert(toDB(data)).select('id').single())
+    return row?.id
   },
   async update(id, data) {
-    try { await db.condicionInsegura.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('condiciones.update', e) }
+    await q('condiciones.update', supabase.from('condicion_insegura').update(toDB(data)).eq('id', id))
   },
   async remove(id) {
-    try { await db.condicionInsegura.delete(id) }
-    catch (e) { err('condiciones.remove', e) }
+    await q('condiciones.remove', supabase.from('condicion_insegura').delete().eq('id', id))
   },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  EXÁMENES MÉDICOS OCUPACIONALES
+//  EXÁMENES MÉDICOS
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const examenMedicoDB = {
   async getAll() {
-    try { return await db.examenMedico.toArray() }
-    catch (e) { err('examen.getAll', e) }
+    const data = await q('examen.getAll', supabase.from('examen_medico').select('*'))
+    return manyFromDB(data)
   },
   async create(data) {
-    try { return await db.examenMedico.add({ ...data, fechaCreacion: nowISO() }) }
-    catch (e) { err('examen.create', e) }
+    const row = await one('examen.create',
+      supabase.from('examen_medico').insert(toDB(data)).select('id').single())
+    return row?.id
   },
   async update(id, data) {
-    try { await db.examenMedico.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('examen.update', e) }
+    await q('examen.update', supabase.from('examen_medico').update(toDB(data)).eq('id', id))
   },
   async remove(id) {
-    try { await db.examenMedico.delete(id) }
-    catch (e) { err('examen.remove', e) }
+    await q('examen.remove', supabase.from('examen_medico').delete().eq('id', id))
   },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  CONFIGURACIÓN DE ALERTAS DE EXÁMENES
+//  CONFIGURACIÓN DE ALERTAS
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const configuracionAlertaDB = {
   async getAll() {
-    try { return await db.configuracionAlerta.toArray() }
-    catch (e) { err('configAlerta.getAll', e) }
+    const data = await q('configAlerta.getAll', supabase.from('configuracion_alerta').select('*'))
+    return manyFromDB(data)
   },
   async upsert(tipo, data) {
-    try {
-      const existing = await db.configuracionAlerta.where('tipo').equals(tipo).first()
-      if (existing) {
-        await db.configuracionAlerta.update(existing.id, { ...data, fechaActualizacion: nowISO() })
-        return existing.id
-      }
-      return await db.configuracionAlerta.add({ tipo, ...data, fechaCreacion: nowISO() })
-    } catch (e) { err('configAlerta.upsert', e) }
+    const { error } = await supabase.from('configuracion_alerta')
+      .upsert({ tipo, ...toDB(data) }, { onConflict: 'tipo' })
+    if (error) err('configAlerta.upsert', error)
   },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  HALLAZGOS AT/IT  (MT-SST-013 — Acciones Preventivas, Correctivas y Mejora)
+//  HALLAZGOS AT/IT
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const hallazgoDB = {
   async getAll() {
-    try { return await db.hallazgo.toArray() }
-    catch (e) { err('hallazgo.getAll', e) }
+    const data = await q('hallazgo.getAll', supabase.from('hallazgo').select('*'))
+    return manyFromDB(data)
   },
   async create(data) {
-    try { return await db.hallazgo.add({ ...data, fechaCreacion: nowISO() }) }
-    catch (e) { err('hallazgo.create', e) }
+    const row = await one('hallazgo.create',
+      supabase.from('hallazgo').insert(toDB(data)).select('id').single())
+    return row?.id
   },
   async update(id, data) {
-    try { await db.hallazgo.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('hallazgo.update', e) }
+    await q('hallazgo.update', supabase.from('hallazgo').update(toDB(data)).eq('id', id))
   },
   async remove(id) {
-    try { await db.hallazgo.delete(id) }
-    catch (e) { err('hallazgo.remove', e) }
+    await q('hallazgo.remove', supabase.from('hallazgo').delete().eq('id', id))
   },
   async bulkCreate(items) {
-    try { return await db.hallazgo.bulkAdd(items, { allKeys: true }) }
-    catch (e) { err('hallazgo.bulkCreate', e) }
+    const data = await q('hallazgo.bulkCreate',
+      supabase.from('hallazgo').insert(items.map(toDB)).select('id'))
+    return data?.map(r => r.id)
   },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  INDICADORES DE CUMPLIMIENTO
+//  INDICADORES
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const indicadorDB = {
   async getAll() {
-    try { return await db.indicador.toArray() }
-    catch (e) { err('indicador.getAll', e) }
+    const data = await q('indicador.getAll', supabase.from('indicador').select('*'))
+    return manyFromDB(data)
   },
   async create(data) {
-    try { return await db.indicador.add({ ...data, fechaCreacion: nowISO() }) }
-    catch (e) { err('indicador.create', e) }
+    const row = await one('indicador.create',
+      supabase.from('indicador').insert(toDB(data)).select('id').single())
+    return row?.id
   },
   async update(id, data) {
-    try { await db.indicador.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('indicador.update', e) }
+    await q('indicador.update', supabase.from('indicador').update(toDB(data)).eq('id', id))
   },
   async remove(id) {
-    try { await db.indicador.delete(id) }
-    catch (e) { err('indicador.remove', e) }
+    await q('indicador.remove', supabase.from('indicador').delete().eq('id', id))
   },
 }
 
 export const datoIndicadorDB = {
   async getByIndicadorAño(indicadorId, año) {
-    try {
-      return await db.datoIndicador
-        .where('[indicadorId+año]').equals([indicadorId, año]).toArray()
-    } catch (e) { err('dato.getByIndicadorAño', e) }
+    const data = await q('dato.getByIndicadorAño',
+      supabase.from('dato_indicador').select('*').eq('indicador_id', indicadorId).eq('año', año))
+    return manyFromDB(data)
   },
   async upsert(indicadorId, mes, año, data) {
-    try {
-      const existing = await db.datoIndicador
-        .where('[indicadorId+año]').equals([indicadorId, año])
-        .filter(d => d.mes === mes)
-        .first()
-      if (existing) {
-        await db.datoIndicador.update(existing.id, { ...data, fechaActualizacion: nowISO() })
-        return existing.id
-      }
-      return await db.datoIndicador.add({ indicadorId, mes, año, ...data, fechaCreacion: nowISO() })
-    } catch (e) { err('dato.upsert', e) }
+    const { error } = await supabase.from('dato_indicador')
+      .upsert({ indicador_id: indicadorId, mes, año, ...toDB(data) }, { onConflict: 'indicador_id,mes,año' })
+    if (error) err('dato.upsert', error)
   },
   async removeByIndicador(indicadorId) {
-    try { await db.datoIndicador.where('indicadorId').equals(indicadorId).delete() }
-    catch (e) { err('dato.removeByIndicador', e) }
+    await q('dato.removeByIndicador',
+      supabase.from('dato_indicador').delete().eq('indicador_id', indicadorId))
   },
 }
 
 export const planAccionIndicadorDB = {
   async getByIndicador(indicadorId) {
-    try { return await db.planAccionIndicador.where('indicadorId').equals(indicadorId).toArray() }
-    catch (e) { err('planInd.getByIndicador', e) }
+    const data = await q('planInd.getByIndicador',
+      supabase.from('plan_accion_indicador').select('*').eq('indicador_id', indicadorId))
+    return manyFromDB(data)
   },
   async create(data) {
-    try { return await db.planAccionIndicador.add({ ...data, fechaCreacion: nowISO() }) }
-    catch (e) { err('planInd.create', e) }
+    const row = await one('planInd.create',
+      supabase.from('plan_accion_indicador').insert(toDB(data)).select('id').single())
+    return row?.id
   },
   async update(id, data) {
-    try { await db.planAccionIndicador.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('planInd.update', e) }
+    await q('planInd.update', supabase.from('plan_accion_indicador').update(toDB(data)).eq('id', id))
   },
   async remove(id) {
-    try { await db.planAccionIndicador.delete(id) }
-    catch (e) { err('planInd.remove', e) }
+    await q('planInd.remove', supabase.from('plan_accion_indicador').delete().eq('id', id))
   },
   async removeByIndicador(indicadorId) {
-    try { await db.planAccionIndicador.where('indicadorId').equals(indicadorId).delete() }
-    catch (e) { err('planInd.removeByIndicador', e) }
+    await q('planInd.removeByIndicador',
+      supabase.from('plan_accion_indicador').delete().eq('indicador_id', indicadorId))
   },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  EVALUACIÓN SG-SST  (Resolución 0312 / 2019)
+//  EVALUACIÓN SG-SST
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const evaluacionSGSSTDB = {
   async getAll() {
-    try { return await db.evaluacionSGSST.toArray() }
-    catch (e) { err('evalSGSST.getAll', e) }
+    const data = await q('evalSGSST.getAll', supabase.from('evaluacion_sgsst').select('*'))
+    return manyFromDB(data)
   },
   async getByEmpresaAño(empresaId, año) {
-    try {
-      return await db.evaluacionSGSST
-        .where('[empresaId+año]').equals([empresaId, año]).first()
-    } catch (e) { err('evalSGSST.getByEmpresaAño', e) }
+    const data = await one('evalSGSST.getByEmpresaAño',
+      supabase.from('evaluacion_sgsst').select('*').eq('empresa_id', empresaId).eq('año', año).single())
+    return fromDB(data)
   },
   async create(data) {
-    try { return await db.evaluacionSGSST.add({ ...data, fechaCreacion: nowISO() }) }
-    catch (e) { err('evalSGSST.create', e) }
+    const row = await one('evalSGSST.create',
+      supabase.from('evaluacion_sgsst').insert(toDB(data)).select('id').single())
+    return row?.id
   },
   async update(id, data) {
-    try { await db.evaluacionSGSST.update(id, { ...data, fechaActualizacion: nowISO() }) }
-    catch (e) { err('evalSGSST.update', e) }
+    await q('evalSGSST.update', supabase.from('evaluacion_sgsst').update(toDB(data)).eq('id', id))
   },
   async remove(id) {
-    try { await db.evaluacionSGSST.delete(id) }
-    catch (e) { err('evalSGSST.remove', e) }
+    await q('evalSGSST.remove', supabase.from('evaluacion_sgsst').delete().eq('id', id))
   },
 }
 
 export const itemEvaluacionDB = {
   async getByEvaluacion(evaluacionId) {
-    try { return await db.itemEvaluacion.where('evaluacionId').equals(evaluacionId).toArray() }
-    catch (e) { err('itemEval.getByEvaluacion', e) }
+    const data = await q('itemEval.getByEvaluacion',
+      supabase.from('item_evaluacion').select('*').eq('evaluacion_id', evaluacionId))
+    return manyFromDB(data)
   },
   async upsert(evaluacionId, codigo, data) {
-    try {
-      const existing = await db.itemEvaluacion
-        .where('[evaluacionId+codigo]').equals([evaluacionId, codigo]).first()
-      if (existing) {
-        await db.itemEvaluacion.update(existing.id, { ...data, fechaActualizacion: nowISO() })
-        return existing.id
-      }
-      return await db.itemEvaluacion.add({ evaluacionId, codigo, ...data, fechaCreacion: nowISO() })
-    } catch (e) { err('itemEval.upsert', e) }
+    const { error } = await supabase.from('item_evaluacion')
+      .upsert({ evaluacion_id: evaluacionId, codigo, ...toDB(data) }, { onConflict: 'evaluacion_id,codigo' })
+    if (error) err('itemEval.upsert', error)
   },
   async removeByEvaluacion(evaluacionId) {
-    try { await db.itemEvaluacion.where('evaluacionId').equals(evaluacionId).delete() }
-    catch (e) { err('itemEval.removeByEvaluacion', e) }
+    await q('itemEval.removeByEvaluacion',
+      supabase.from('item_evaluacion').delete().eq('evaluacion_id', evaluacionId))
   },
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  EXPORTAR instancia db para uso directo cuando se necesite
-// ─────────────────────────────────────────────────────────────────────────────
-export { db }
+// Alias de compatibilidad — algunos archivos importan db directamente
+export { supabase as db }
