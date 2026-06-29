@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Favicon corporativo GEPPI -->
+    <link rel="icon"          type="image/jpeg" href="/logo.jpg" />
+    <link rel="apple-touch-icon"               href="/logo.jpg" />
+
+    <!-- Color corporativo para barra de navegador (móvil) -->
+    <meta name="theme-color" content="#1B62CC" />
+    <meta name="msapplication-TileColor" content="#1B62CC" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description"
+          content="GEPPI — Sistema de Gestión de Elementos de Protección Personal para SST Colombia. Decreto 1072/2015 y Resolución 0312/2019." />
+    <meta name="keywords" content="EPP, SST, seguridad, salud, trabajo, Colombia, GEPPI" />
+
+    <!-- Precargar el logo para evitar flash -->
+    <link rel="preload" href="/logo.jpg" as="image" type="image/jpeg" />
+
+    <title>GEPPI — Gestión de EPP</title>
+
+    <!-- Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* Pantalla de carga inicial antes de que React hidrate */
+      #initial-loader {
+        position: fixed; inset: 0;
+        background: linear-gradient(148deg, #eef5ff 0%, #f8fafc 50%, #f0f9f1 100%);
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 28px; z-index: 9999;
+        transition: opacity 0.4s ease;
+      }
+      #initial-loader img   { height: 72px; width: auto; }
+      #initial-loader .bar  {
+        width: 180px; height: 3px; border-radius: 99px;
+        background: #e2e8f0; overflow: hidden;
+      }
+      #initial-loader .fill {
+        height: 100%; width: 55%; border-radius: 99px;
+        background: linear-gradient(90deg, #39B54A, #1b62cc, #F7941D);
+        background-size: 200% auto;
+        animation: shimmer-bar 1.5s ease infinite;
+      }
+      #initial-loader p {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px; color: #94a3b8; margin: -12px 0 0;
+      }
+      @keyframes shimmer-bar {
+        0%   { background-position: -200% center; }
+        100% { background-position:  200% center; }
+      }
+    </style>
+  </head>
+
+  <body class="font-sans antialiased">
+
+    <!-- Pantalla de carga HTML pura (visible antes de React) -->
+    <div id="initial-loader">
+      <img src="/logo.jpg" alt="GEPPI" />
+      <div class="bar"><div class="fill"></div></div>
+      <p>Iniciando GEPPI…</p>
+    </div>
+
+    <div id="root"></div>
+
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Ocultar el loader HTML cuando React tome el control
+      document.addEventListener('DOMContentLoaded', () => {
+        const root = document.getElementById('root')
+        const loader = document.getElementById('initial-loader')
+        const obs = new MutationObserver(() => {
+          if (root.children.length > 0) {
+            loader.style.opacity = '0'
+            setTimeout(() => loader.remove(), 400)
+            obs.disconnect()
+          }
+        })
+        obs.observe(root, { childList: true })
+      })
+    </script>
+  </body>
+</html>
