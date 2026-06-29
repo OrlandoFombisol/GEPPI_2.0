@@ -595,6 +595,23 @@ export const usuarioDB = {
       supabase.from('usuario').select('*').eq('correo', correo.toLowerCase()).single())
     return fromDB(data)
   },
+  async create({ nombre, correo, password, rol, estado }) {
+    // signUp preserva la sesión existente del admin (Supabase v2)
+    const { data, error } = await supabase.auth.signUp({
+      email: correo.toLowerCase(),
+      password,
+      options: { data: { nombre, rol: rol || 'COLABORADOR' } },
+    })
+    if (error) throw error
+    if (!data.user) throw new Error('No se pudo crear el usuario.')
+    // El trigger handle_new_user ya insertó la fila; actualizamos campos extra
+    await supabase.from('usuario').update({
+      nombre,
+      rol:    rol    || 'COLABORADOR',
+      estado: estado || 'ACTIVO',
+    }).eq('id', data.user.id)
+    return data.user.id
+  },
   async update(id, data) {
     await q('usuario.update', supabase.from('usuario').update(toDB(data)).eq('id', id))
   },
