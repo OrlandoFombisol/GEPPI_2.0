@@ -134,7 +134,7 @@ function AppLoader() {
       </div>
 
       <p style={{ fontSize: 12, color: '#94a3b8', marginTop: -12 }}>
-        Iniciando base de datos…
+        Verificando sesión…
       </p>
     </div>
   )
