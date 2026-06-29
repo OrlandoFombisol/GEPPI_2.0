@@ -12,7 +12,7 @@ import {
 const logoPng = '/logo.jpg'
 import { SISTEMA }  from '@/constants'
 import { useUser }              from '@/contexts/UserContext'
-import { alertaDB, usuarioDB } from '@/db'
+import { alertaDB } from '@/db'
 
 // ─── Configuración de navegación con colores por sección ─────────────────────
 // adminOnly: true → solo visible para ADMINISTRADOR
@@ -267,127 +267,25 @@ function NavItem({ item, onClose, collapsed, index, badges = {} }) {
   )
 }
 
-// ─── Selector rápido de usuario (solo admin) ─────────────────────────────────
+// ─── Info del usuario actual ──────────────────────────────────────────────────
 const ROL_COLOR = { ADMINISTRADOR: '#A78BFA', COLABORADOR: '#60A5FA', SST: '#4ADE80' }
 
 function iniciales(nombre) {
   return (nombre || '?').split(' ').slice(0, 2).map(p => p[0] || '').join('').toUpperCase()
 }
 
-function SelectorUsuario({ collapsed }) {
-  const { user, loginUser } = useUser()
-  const [open,     setOpen]     = useState(false)
-  const [usuarios, setUsuarios] = useState([])
-
-  useEffect(() => {
-    if (!open) return
-    usuarioDB.getAll().then(u => setUsuarios((u || []).filter(x => x.estado === 'ACTIVO')))
-  }, [open])
-
-  function cambiar(u) {
-    loginUser(u)
-    setOpen(false)
-  }
-
+function UsuarioActual({ collapsed }) {
+  const { user } = useUser()
   const color = ROL_COLOR[user?.rol] || '#60A5FA'
-
   return (
-    <div style={{ position: 'relative', padding: collapsed ? '6px 6px 2px' : '6px 10px 2px' }}>
-      <AnimatePresence>
-        {open && (
-          <>
-            <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-              style={{
-                position: 'absolute', bottom: 'calc(100% + 6px)',
-                left: collapsed ? '50%' : 0,
-                transform: collapsed ? 'translateX(-50%)' : 'none',
-                width: 248, zIndex: 50,
-                background: '#0f1b33',
-                border: '1px solid rgba(255,255,255,0.10)',
-                borderRadius: 14,
-                boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-                overflow: 'hidden',
-              }}
-            >
-              <div style={{ padding: '10px 14px 8px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                <p style={{ margin: 0, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>
-                  Cambiar usuario de sesión
-                </p>
-              </div>
-              <ul style={{ listStyle: 'none', margin: 0, padding: '6px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {usuarios.map(u => {
-                  const esActual = u.correo === user?.email
-                  const rc = ROL_COLOR[u.rol] || '#60A5FA'
-                  return (
-                    <li key={u.id}>
-                      <motion.button
-                        whileHover={!esActual ? { backgroundColor: 'rgba(255,255,255,0.06)' } : {}}
-                        whileTap={!esActual ? { scale: 0.97 } : {}}
-                        onClick={() => !esActual && cambiar(u)}
-                        style={{
-                          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                          padding: '8px 10px', borderRadius: 10, border: 'none', cursor: esActual ? 'default' : 'pointer',
-                          background: esActual ? 'rgba(74,158,255,0.12)' : 'transparent',
-                          textAlign: 'left', transition: 'background 0.15s',
-                        }}
-                      >
-                        <div style={{
-                          width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          background: `${rc}22`, border: `1.5px solid ${rc}44`,
-                          fontSize: 12, fontWeight: 800, color: rc,
-                        }}>
-                          {iniciales(u.nombre)}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: esActual ? '#93C5FD' : 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {u.nombre}
-                          </p>
-                          <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.38)', whiteSpace: 'nowrap' }}>
-                            {u.rol} · {u.correo}
-                          </p>
-                        </div>
-                        {esActual && (
-                          <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', boxShadow: '0 0 6px #4ADE80', flexShrink: 0 }} />
-                        )}
-                      </motion.button>
-                    </li>
-                  )
-                })}
-              </ul>
-              <div style={{ padding: '6px 14px 10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <p style={{ margin: 0, fontSize: 9, color: 'rgba(255,255,255,0.22)', letterSpacing: '0.06em' }}>
-                  Solo visible para ADMINISTRADOR · Modo de prueba
-                </p>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Botón trigger */}
-      <motion.button
-        onClick={() => setOpen(o => !o)}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.97 }}
-        title="Cambiar usuario"
-        data-tooltip={collapsed ? 'Cambiar usuario' : undefined}
-        className={collapsed ? 'sidebar-tooltip' : ''}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          gap: 10, padding: collapsed ? '8px 0' : '8px 12px',
-          borderRadius: 11, border: `1px solid ${open ? `${color}44` : 'rgba(255,255,255,0.08)'}`,
-          background: open ? `${color}12` : 'rgba(255,255,255,0.04)',
-          cursor: 'pointer', transition: 'all 0.2s',
-        }}
-      >
-        {/* Avatar actual */}
+    <div style={{ padding: collapsed ? '6px 6px 2px' : '6px 10px 2px' }}>
+      <div style={{
+        width: '100%', display: 'flex', alignItems: 'center',
+        justifyContent: collapsed ? 'center' : 'flex-start',
+        gap: 10, padding: collapsed ? '8px 0' : '8px 12px',
+        borderRadius: 11, border: '1px solid rgba(255,255,255,0.08)',
+        background: 'rgba(255,255,255,0.04)',
+      }}>
         <div style={{
           width: 28, height: 28, borderRadius: 8, flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -400,18 +298,18 @@ function SelectorUsuario({ collapsed }) {
           {!collapsed && (
             <motion.div
               initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-              style={{ flex: 1, minWidth: 0, textAlign: 'left' }}
+              style={{ flex: 1, minWidth: 0 }}
             >
               <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.80)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user?.nombre || 'Usuario'}
               </p>
               <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap' }}>
-                Cambiar usuario ↑
+                {user?.rol || ''}
               </p>
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.button>
+      </div>
     </div>
   )
 }
@@ -419,7 +317,7 @@ function SelectorUsuario({ collapsed }) {
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 export default function Sidebar({ open, onClose, collapsed, onToggle }) {
   let globalIndex = 0
-  const { user, loginUser, logout } = useUser()
+  const { user, logout } = useUser()
   const navigate         = useNavigate()
   const [alertCount, setAlertCount] = useState(0)
   const isAdmin = user?.rol === 'ADMINISTRADOR'
@@ -642,8 +540,8 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
             )}
           </AnimatePresence>
 
-          {/* Selector rápido de usuario — solo admin */}
-          {isAdmin && <SelectorUsuario collapsed={collapsed} />}
+          {/* Usuario activo */}
+          <UsuarioActual collapsed={collapsed} />
 
           {/* Botón cerrar sesión */}
           <div style={{ padding: collapsed ? '4px 6px 12px' : '4px 10px 12px' }}>

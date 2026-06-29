@@ -4,8 +4,7 @@ import {
   CheckCircle2, ShieldCheck, AlertTriangle, Loader2,
   User, Calendar, MapPin, Briefcase, Package,
 } from 'lucide-react'
-import db                    from '@/db/schema'
-import { eppDB, empresaDB, trabajadorDB, cargoDB, sedeDB } from '@/db'
+import { eppDB, empresaDB, trabajadorDB, cargoDB, sedeDB, entregaDB, detalleEntregaDB } from '@/db'
 import { formatearFecha, formatearFechaLarga }             from '@/utils/dates'
 import { formatearNumeroActa }                             from '@/utils/formatters'
 import { FirmaCanvas }                                     from '@/components/firma'
@@ -105,7 +104,7 @@ export default function AceptarEntrega() {
 
   async function cargar() {
     try {
-      const entrega = await db.entrega.where('tokenAceptacion').equals(token).first()
+      const entrega = await entregaDB.getByToken(token)
       if (!entrega) { setError('El enlace no es válido o ha expirado.'); setFase('error'); return }
       if (entrega.estado === 'FIRMADA') { setFase('ya_firmada'); return }
 
@@ -114,7 +113,7 @@ export default function AceptarEntrega() {
         cargoDB.getById(entrega.cargoId),
         sedeDB.getById(entrega.sedeId),
         empresaDB.getById(entrega.empresaId),
-        db.detalleEntrega.where('entregaId').equals(entrega.id).toArray(),
+        detalleEntregaDB.getPorEntrega(entrega.id),
         eppDB.getAll(),
       ])
 
@@ -141,21 +140,7 @@ export default function AceptarEntrega() {
     if (!base64 || guardando) return
     setGuardando(true)
     try {
-      await db.transaction('rw', db.entrega, db.firma, async () => {
-        const entrega = await db.entrega.where('tokenAceptacion').equals(token).first()
-        if (!entrega) throw new Error('Token no encontrado')
-        await db.entrega.update(entrega.id, {
-          estado:          'FIRMADA',
-          fechaAceptacion: new Date().toISOString(),
-        })
-        await db.firma.add({
-          entregaId:    entrega.id,
-          firmaBase64:  base64,
-          fechaCaptura: new Date().toISOString(),
-          dispositivo:  navigator.userAgent || 'Desconocido',
-          origenQR:     true,
-        })
-      })
+      await entregaDB.aceptarConToken(token, base64)
       setFase('aceptado')
     } catch {
       setError('No se pudo registrar la firma. Intenta de nuevo.')

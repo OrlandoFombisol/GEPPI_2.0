@@ -37,7 +37,8 @@ const AceptarEntrega          = lazy(() => import('@/pages/AceptarEntrega'))
 
 // ─── Guarda de ruta ───────────────────────────────────────────────────────────
 function ProtectedRoute({ children }) {
-  const { user } = useUser()
+  const { user, loading } = useUser()
+  if (loading) return <AppLoader />
   if (!user) return <Navigate to="/login" replace />
   return children
 }

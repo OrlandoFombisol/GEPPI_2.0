@@ -1227,19 +1227,10 @@ export default function Login() {
     setLoading(true)
     setLoginError('')
     try {
-      const { usuarioDB } = await import('@/db')
-      const usuario = await usuarioDB.getByCorreo(form.email.trim())
-      if (!usuario || usuario.estado !== 'ACTIVO' || usuario.password !== form.password) {
-        setLoginError('Correo o contraseña incorrectos')
-        setLoading(false)
-        return
-      }
-      await usuarioDB.update(usuario.id, { ultimoAcceso: new Date().toISOString() })
-      loginUser(usuario)
+      await loginUser({ email: form.email.trim(), password: form.password })
       navigate('/dashboard')
-    } catch (err) {
-      console.error('[Login]', err)
-      setLoginError('Error al verificar credenciales. Intente nuevamente.')
+    } catch {
+      setLoginError('Correo o contraseña incorrectos. Verifica tus credenciales.')
       setLoading(false)
     }
   }
