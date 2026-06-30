@@ -376,6 +376,36 @@ export const entregaDB = {
       supabase.from('entrega').select('*').eq('token_aceptacion', token).single())
     return fromDB(data)
   },
+  async crearPendiente({ trabajador, cargo, epps, usuarioId }) {
+    const token = crypto.randomUUID()
+    const entregaRow = await one('entrega.crearPendiente',
+      supabase.from('entrega').insert({
+        trabajador_id:    trabajador.id,
+        cargo_id:         cargo.id,
+        sede_id:          trabajador.sedeId,
+        empresa_id:       trabajador.empresaId,
+        fecha_entrega:    new Date().toISOString().slice(0, 10),
+        estado:           'PENDIENTE',
+        token_aceptacion: token,
+        usuario_id:       usuarioId || null,
+      }).select('id').single())
+    const entregaId = entregaRow.id
+    for (const item of epps) {
+      await q('entrega.crearPendiente.detalle',
+        supabase.from('detalle_entrega').insert({
+          entrega_id:        entregaId,
+          epp_id:            item.eppId,
+          cantidad:          item.cantidad,
+          fecha_vencimiento: item.fechaVencimiento || null,
+          observacion:       item.observaciones    || null,
+        }))
+      await inventarioDB.ajustarStock(
+        item.eppId, trabajador.sedeId, -item.cantidad, 'SALIDA',
+        { entregaId, usuarioId }
+      )
+    }
+    return { entregaId, token }
+  },
   async confirmar({ trabajador, cargo, epps, observaciones, responsable, firmaBase64, usuarioId }) {
     // 1. Crear entrega
     const entregaRow = await one('entrega.confirmar.cabecera',
