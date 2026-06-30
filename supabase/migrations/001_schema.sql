@@ -457,3 +457,23 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+--  COLUMNAS ADICIONALES (detectadas durante pruebas 2026-06-29)
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+alter table public.cargo
+  add column if not exists nivel       text,
+  add column if not exists descripcion text;
+
+alter table public.sede
+  add column if not exists correo text,
+  add column if not exists email  text;
+
+alter table public.epp
+  add column if not exists categoria      text,
+  add column if not exists marca_sugerida text;
+
+alter table public.trabajador
+  add column if not exists genero text;
