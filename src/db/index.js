@@ -128,11 +128,13 @@ export const eppDB = {
     return manyFromDB(data)
   },
   async create(data) {
-    const row = await one('epp.create', supabase.from('epp').insert({ ...toDB(data), estado: 'ACTIVO' }).select('id').single())
+    const { fichaTecnicaBlob, fichaTecnicaNombre, ...rest } = data
+    const row = await one('epp.create', supabase.from('epp').insert({ ...toDB(rest), estado: 'ACTIVO' }).select('id').single())
     return row?.id
   },
   async update(id, data) {
-    await q('epp.update', supabase.from('epp').update(toDB(data)).eq('id', id))
+    const { fichaTecnicaBlob, fichaTecnicaNombre, ...rest } = data
+    await q('epp.update', supabase.from('epp').update(toDB(rest)).eq('id', id))
   },
   async remove(id) {
     await q('epp.remove', supabase.from('epp').delete().eq('id', id))
