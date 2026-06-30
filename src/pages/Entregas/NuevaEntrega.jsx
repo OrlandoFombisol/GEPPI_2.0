@@ -1,6 +1,7 @@
 import { useState }         from 'react'
 import { CheckCircle2 }     from 'lucide-react'
 import { entregaDB }        from '@/db'
+import { useUser }          from '@/contexts/UserContext'
 import { Button }           from '@/components/ui'
 import BotonPDF             from '@/components/pdf/BotonPDF'
 import Paso1Trabajador      from './pasos/Paso1Trabajador'
@@ -85,6 +86,7 @@ function Exito({ entregaId, firmaBase64, onNueva, onHistorial }) {
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function NuevaEntrega({ onCancelar, onCompletado }) {
+  const { user }              = useUser()
   const [paso,    setPaso]    = useState(1)
   const [saving,  setSaving]  = useState(false)
   const [exito,   setExito]   = useState(null) // null | entregaId
@@ -107,12 +109,26 @@ export default function NuevaEntrega({ onCancelar, onCompletado }) {
     actualizar({ eppItems })
     setPaso(3)
   }
-  const paso3Next = ({ firmaBase64 }) => {
+  const paso3Next = ({ firmaBase64, modoQR, entregaId }) => {
+    if (modoQR) {
+      // Entrega ya creada y firmada vía QR — ir directo al éxito
+      setExito(entregaId)
+      return
+    }
     actualizar({ firmaBase64 })
     setPaso(4)
   }
 
-  // Confirmar entrega
+  // Pre-crear entrega PENDIENTE para flujo QR
+  const generarEntregaPendiente = () =>
+    entregaDB.crearPendiente({
+      trabajador: datos.trabajador,
+      cargo:      datos.cargo,
+      epps:       datos.eppItems,
+      usuarioId:  user?.id || null,
+    })
+
+  // Confirmar entrega (modo firma presencial)
   const confirmar = async ({ responsable, observaciones }) => {
     setSaving(true)
     try {
@@ -123,7 +139,7 @@ export default function NuevaEntrega({ onCancelar, onCompletado }) {
         observaciones,
         responsable,
         firmaBase64: datos.firmaBase64,
-        usuarioId:   1,
+        usuarioId:   user?.id || null,
       })
       setExito(entregaId)
     } finally {
@@ -170,8 +186,11 @@ export default function NuevaEntrega({ onCancelar, onCompletado }) {
             {paso === 3 && (
               <Paso3Firma
                 trabajador={datos.trabajador}
+                cargo={datos.cargo}
+                eppItems={datos.eppItems}
                 onNext={paso3Next}
                 onAnterior={() => setPaso(2)}
+                onGenerarEntregaPendiente={generarEntregaPendiente}
               />
             )}
             {paso === 4 && (
