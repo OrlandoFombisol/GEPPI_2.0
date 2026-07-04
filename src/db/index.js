@@ -671,6 +671,10 @@ export const vehiculoDB = {
     const data = await one('vehiculo.getById', supabase.from('vehiculo').select('*').eq('id', id).single())
     return fromDB(data)
   },
+  async getByPlaca(placa) {
+    const { data } = await supabase.from('vehiculo').select('id').eq('placa', String(placa).toUpperCase().trim()).maybeSingle()
+    return data?.id || null
+  },
   async create(data) {
     const row = await one('vehiculo.create',
       supabase.from('vehiculo').insert({ ...toDB(data), placa: String(data.placa).toUpperCase().trim(), estado: 'ACTIVO' }).select('id').single())
