@@ -131,6 +131,12 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
 
   const totalRespondidos = ITEMS_CHECKLIST.filter(i => items[i.id]).length
 
+  const marcarTodasBuenas = () => {
+    const todas = {}
+    ITEMS_CHECKLIST.forEach(i => { todas[i.id] = 'BUENO' })
+    setItems(todas)
+  }
+
   const guardar = async () => {
     setError('')
 
@@ -152,10 +158,11 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
         observacion: observaciones[item.id] || '',
       }))
 
-      // Crear vehículo nuevo si se digitó placa manualmente y no está en el sistema
+      // Buscar o crear vehículo por placa
       let finalVehiculoId = vehiculoId ? Number(vehiculoId) : null
       if (!finalVehiculoId && vehiculoPlaca.trim()) {
-        finalVehiculoId = await vehiculoDB.create({
+        const existente = await vehiculoDB.getByPlaca(vehiculoPlaca.trim())
+        finalVehiculoId = existente ?? await vehiculoDB.create({
           placa:     vehiculoPlaca.trim().toUpperCase(),
           empresaId: Number(empresaId),
           tipo:      '',
@@ -343,6 +350,17 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
             <span className="text-xs font-medium">Tomar o adjuntar foto del vehículo</span>
           </button>
         )}
+      </div>
+
+      {/* Acciones rápidas del checklist */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={marcarTodasBuenas}
+          className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors"
+        >
+          ✓ Marcar todas como Buenas
+        </button>
       </div>
 
       {/* Checklist por grupos */}
