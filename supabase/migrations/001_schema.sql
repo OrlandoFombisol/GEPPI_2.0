@@ -489,3 +489,26 @@ alter table public.alerta
   add column if not exists gestionada    boolean default false,
   add column if not exists accion_tomada text,
   add column if not exists fecha_gestion timestamptz;
+
+-- Evidencias del Plan Anual de Trabajo
+create table if not exists public.evidencia_plan (
+  id            bigserial primary key,
+  plan_id       bigint references public.plan_trabajo(id) on delete cascade,
+  empresa_id    bigint references public.empresa(id),
+  nombre        text not null,
+  tipo          text,
+  storage_path  text not null,
+  tamaño_bytes  integer,
+  fecha_subida  timestamptz default now(),
+  usuario_id    uuid references auth.users(id)
+);
+alter table public.evidencia_plan enable row level security;
+create policy "auth_all" on public.evidencia_plan for all using (auth.uid() is not null);
+
+-- Storage policies para bucket evidencias
+create policy "upload_evidencias" on storage.objects
+  for insert to authenticated with check (bucket_id = 'evidencias');
+create policy "read_evidencias"   on storage.objects
+  for select to authenticated using  (bucket_id = 'evidencias');
+create policy "delete_evidencias" on storage.objects
+  for delete to authenticated using  (bucket_id = 'evidencias');
