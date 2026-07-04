@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Camera, CheckCircle2, XCircle, AlertCircle, ChevronLeft } from 'lucide-react'
-import { checklistDB, vehiculoDB }   from '@/db'
+import { checklistDB, vehiculoDB, alertaDB } from '@/db'
 import { Button, AlertBanner }       from '@/components/ui'
 
 // ─── Ítems del checklist preoperacional ──────────────────────────────────────
@@ -163,7 +163,7 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
         })
       }
 
-      await checklistDB.create({
+      const checklistId = await checklistDB.create({
         fecha,
         empresaId:        Number(empresaId),
         vehiculoId:       finalVehiculoId,
@@ -175,6 +175,24 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
         fotoBase64,
         fotoFecha:        new Date().toISOString(),
       })
+
+      // Generar alerta interna si hay ítems en estado MALO o REGULAR
+      const itemsMalo    = itemsArray.filter(i => i.estado === 'MALO')
+      const itemsRegular = itemsArray.filter(i => i.estado === 'REGULAR')
+      if (itemsMalo.length > 0 || itemsRegular.length > 0) {
+        const partes = []
+        if (itemsMalo.length > 0)    partes.push(`${itemsMalo.length} ítem(s) MALO`)
+        if (itemsRegular.length > 0) partes.push(`${itemsRegular.length} ítem(s) REGULAR`)
+        const vehiculoInfo = vehiculoPlaca.trim()
+          ? `Vehículo ${vehiculoPlaca.trim().toUpperCase()}`
+          : `Conductor ${conductorNombre.trim()}`
+        await alertaDB.create({
+          tipo:        'CHECKLIST_HALLAZGO',
+          nivel:       itemsMalo.length > 0 ? 'CRITICA' : 'ADVERTENCIA',
+          mensaje:     `${vehiculoInfo} · ${partes.join(' y ')}. Conductor: ${conductorNombre.trim()}.`,
+          referenciaId: String(checklistId),
+        })
+      }
 
       onGuardado()
     } catch (err) {
