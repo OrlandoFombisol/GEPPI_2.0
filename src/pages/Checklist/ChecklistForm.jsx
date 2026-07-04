@@ -188,16 +188,17 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
       const itemsMalo    = itemsArray.filter(i => i.estado === 'MALO')
       const itemsRegular = itemsArray.filter(i => i.estado === 'REGULAR')
       if (itemsMalo.length > 0 || itemsRegular.length > 0) {
-        const partes = []
-        if (itemsMalo.length > 0)    partes.push(`${itemsMalo.length} ítem(s) MALO`)
-        if (itemsRegular.length > 0) partes.push(`${itemsRegular.length} ítem(s) REGULAR`)
         const vehiculoInfo = vehiculoPlaca.trim()
           ? `Vehículo ${vehiculoPlaca.trim().toUpperCase()}`
-          : `Conductor ${conductorNombre.trim()}`
+          : conductorNombre.trim()
+        const detalle = [
+          itemsMalo.length    > 0 ? `MALO: ${itemsMalo.map(i => i.label).join(', ')}`       : '',
+          itemsRegular.length > 0 ? `REGULAR: ${itemsRegular.map(i => i.label).join(', ')}` : '',
+        ].filter(Boolean).join(' · ')
         await alertaDB.create({
           tipo:        'CHECKLIST_HALLAZGO',
-          nivel:       itemsMalo.length > 0 ? 'CRITICA' : 'ADVERTENCIA',
-          mensaje:     `${vehiculoInfo} · ${partes.join(' y ')}. Conductor: ${conductorNombre.trim()}.`,
+          nivel:       itemsMalo.length > 0 ? 'CRITICO' : 'WARNING',
+          mensaje:     `${vehiculoInfo} | Conductor: ${conductorNombre.trim()} | ${detalle}`,
           referenciaId: String(checklistId),
         })
       }

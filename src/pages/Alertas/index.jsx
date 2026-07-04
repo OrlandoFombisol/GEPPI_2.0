@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Bell, BellOff, RefreshCw, Zap, Stethoscope, Settings2, Save, ExternalLink } from 'lucide-react'
+import { Bell, BellOff, RefreshCw, Zap, Stethoscope, Settings2, Save, ExternalLink, CheckSquare } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { alertaDB, examenMedicoDB, configuracionAlertaDB } from '@/db'
+import { alertaDB, examenMedicoDB, configuracionAlertaDB, checklistDB } from '@/db'
 import { TIPO_ALERTA, NIVEL_ALERTA }                       from '@/constants'
 import { formatearFechaHora }                              from '@/utils/dates'
 import { generarAlertas }                                  from '@/services/alertasGenerator'
@@ -33,6 +33,106 @@ const TIPO_LABEL   = {
   [TIPO_ALERTA.STOCK_AGOTADO]:     'Stock agotado',
   [TIPO_ALERTA.ENTREGA_PENDIENTE]: 'Entrega pendiente',
   [TIPO_ALERTA.FIRMA_PENDIENTE]:   'Firma pendiente',
+}
+
+// ─── Tarjeta especial: Checklist hallazgo ─────────────────────────────────────
+
+function ChecklistAlertaCard({ alerta, onMarcarLeida }) {
+  const [checklist, setChecklist] = useState(null)
+  const isLeida = Boolean(alerta.leida)
+  const esCritico = alerta.nivel === 'CRITICO'
+
+  useEffect(() => {
+    if (!alerta.referenciaId) return
+    checklistDB.getById(Number(alerta.referenciaId))
+      .then(c => setChecklist(c))
+      .catch(() => {})
+  }, [alerta.referenciaId])
+
+  const itemsMalo    = checklist?.items?.filter(i => i.estado === 'MALO')    || []
+  const itemsRegular = checklist?.items?.filter(i => i.estado === 'REGULAR') || []
+
+  return (
+    <div className={[
+      'rounded-xl border transition-colors overflow-hidden',
+      isLeida ? 'opacity-60' : '',
+      esCritico ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50',
+    ].join(' ')}>
+
+      {/* Header */}
+      <div className={`flex items-center justify-between gap-2 px-4 py-2.5 ${esCritico ? 'bg-red-100' : 'bg-yellow-100'}`}>
+        <div className="flex items-center gap-2">
+          <CheckSquare size={13} className={esCritico ? 'text-red-600' : 'text-yellow-700'} />
+          <span className={`text-xs font-bold ${esCritico ? 'text-red-700' : 'text-yellow-700'}`}>
+            Checklist preoperacional — {esCritico ? 'CRÍTICO' : 'ADVERTENCIA'}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-400 font-mono">
+            {formatearFechaHora(alerta.fechaGeneracion)}
+          </span>
+          {!isLeida && (
+            <button onClick={() => onMarcarLeida(alerta.id)} title="Marcar como leída"
+              className="p-1 rounded text-slate-400 hover:text-green-600 hover:bg-green-100 transition-colors">
+              <BellOff size={13} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex gap-4 p-4">
+        {/* Foto del vehículo */}
+        {checklist?.fotoBase64 && (
+          <img
+            src={checklist.fotoBase64}
+            alt="Foto vehículo"
+            className="w-24 h-24 object-cover rounded-lg border border-slate-200 flex-shrink-0 shadow-sm"
+          />
+        )}
+
+        {/* Detalle */}
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-600">
+            {checklist?.vehiculoPlaca && (
+              <span><span className="font-semibold">Vehículo:</span> {checklist.vehiculoPlaca}</span>
+            )}
+            {checklist?.conductorNombre && (
+              <span><span className="font-semibold">Conductor:</span> {checklist.conductorNombre}</span>
+            )}
+            {checklist?.fecha && (
+              <span><span className="font-semibold">Fecha:</span> {checklist.fecha}</span>
+            )}
+          </div>
+
+          {itemsMalo.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-red-700 uppercase tracking-wide">MALO</p>
+              <div className="flex flex-wrap gap-1">
+                {itemsMalo.map(i => (
+                  <span key={i.id} className="text-xs bg-red-100 text-red-800 border border-red-200 px-2 py-0.5 rounded-full">
+                    {i.label}{i.observacion ? ` — ${i.observacion}` : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {itemsRegular.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-yellow-700 uppercase tracking-wide">REGULAR</p>
+              <div className="flex flex-wrap gap-1">
+                {itemsRegular.map(i => (
+                  <span key={i.id} className="text-xs bg-yellow-100 text-yellow-800 border border-yellow-200 px-2 py-0.5 rounded-full">
+                    {i.label}{i.observacion ? ` — ${i.observacion}` : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // ─── Tarjeta alerta sistema ────────────────────────────────────────────────────
@@ -514,9 +614,11 @@ export default function Page() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {alertasFiltradas.map(a => (
-                <AlertaCard key={a.id} alerta={a} onMarcarLeida={marcarLeida} />
-              ))}
+              {alertasFiltradas.map(a =>
+                a.tipo === 'CHECKLIST_HALLAZGO'
+                  ? <ChecklistAlertaCard key={a.id} alerta={a} onMarcarLeida={marcarLeida} />
+                  : <AlertaCard         key={a.id} alerta={a} onMarcarLeida={marcarLeida} />
+              )}
             </div>
           )}
         </div>

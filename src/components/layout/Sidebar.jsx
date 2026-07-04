@@ -120,8 +120,18 @@ function NavItem({ item, onClose, collapsed, index, badges = {} }) {
   const isActive  = item.path === '/dashboard'
     ? location.pathname === '/dashboard'
     : location.pathname.startsWith(item.path)
-  const Icon  = item.icon
-  const badge = item.badgeKey ? badges[item.badgeKey] : 0
+  const Icon        = item.icon
+  const badge       = item.badgeKey ? badges[item.badgeKey] : 0
+  const hasAlert    = item.badgeKey === 'alertas' && badge > 0
+  const alertColor  = '#EF4444'
+
+  // Animación shake para el ícono de alertas
+  const shakeAnim   = hasAlert
+    ? { rotate: [0, -12, 12, -10, 10, -6, 6, 0] }
+    : {}
+  const shakeTrans  = hasAlert
+    ? { duration: 0.6, repeat: Infinity, repeatDelay: 2.5, ease: 'easeInOut' }
+    : {}
 
   if (collapsed) {
     return (
@@ -139,16 +149,24 @@ function NavItem({ item, onClose, collapsed, index, badges = {} }) {
             style={{
               width: 42, height: 42, borderRadius: 12, position: 'relative',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: isActive
-                ? 'linear-gradient(135deg, rgba(27,98,204,0.55), rgba(8,50,120,0.35))'
-                : 'transparent',
-              boxShadow: isActive ? '0 0 16px rgba(27,98,204,0.45)' : 'none',
-              border: isActive ? '1px solid rgba(74,158,255,0.30)' : '1px solid transparent',
+              background: hasAlert
+                ? 'rgba(239,68,68,0.18)'
+                : isActive
+                  ? 'linear-gradient(135deg, rgba(27,98,204,0.55), rgba(8,50,120,0.35))'
+                  : 'transparent',
+              boxShadow: hasAlert
+                ? '0 0 16px rgba(239,68,68,0.35)'
+                : isActive ? '0 0 16px rgba(27,98,204,0.45)' : 'none',
+              border: hasAlert
+                ? '1px solid rgba(239,68,68,0.40)'
+                : isActive ? '1px solid rgba(74,158,255,0.30)' : '1px solid transparent',
               transition: 'all 0.2s',
             }}
           >
-            <Icon size={17} strokeWidth={isActive ? 2.2 : 1.7}
-                  style={{ color: isActive ? item.color : 'rgba(255,255,255,0.45)' }}/>
+            <motion.div animate={shakeAnim} transition={shakeTrans}>
+              <Icon size={17} strokeWidth={isActive || hasAlert ? 2.2 : 1.7}
+                    style={{ color: hasAlert ? alertColor : isActive ? item.color : 'rgba(255,255,255,0.45)' }}/>
+            </motion.div>
             {badge > 0 && (
               <span style={{
                 position: 'absolute', top: 4, right: 4,
@@ -179,7 +197,7 @@ function NavItem({ item, onClose, collapsed, index, badges = {} }) {
         {() => (
           <motion.div
             whileHover={!isActive ? {
-              backgroundColor: 'rgba(255,255,255,0.06)',
+              backgroundColor: hasAlert ? 'rgba(239,68,68,0.10)' : 'rgba(255,255,255,0.06)',
               x: 2,
             } : {}}
             whileTap={{ scale: 0.98 }}
@@ -187,15 +205,19 @@ function NavItem({ item, onClose, collapsed, index, badges = {} }) {
             style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '8px 10px', borderRadius: 11, position: 'relative',
-              background: isActive
-                ? 'linear-gradient(90deg, rgba(27,98,204,0.28) 0%, rgba(8,50,120,0.12) 100%)'
-                : 'transparent',
-              border: isActive ? '1px solid rgba(74,158,255,0.22)' : '1px solid transparent',
+              background: hasAlert
+                ? 'linear-gradient(90deg, rgba(239,68,68,0.18) 0%, rgba(220,38,38,0.08) 100%)'
+                : isActive
+                  ? 'linear-gradient(90deg, rgba(27,98,204,0.28) 0%, rgba(8,50,120,0.12) 100%)'
+                  : 'transparent',
+              border: hasAlert
+                ? '1px solid rgba(239,68,68,0.30)'
+                : isActive ? '1px solid rgba(74,158,255,0.22)' : '1px solid transparent',
               cursor: 'pointer',
             }}
           >
             {/* Acento izquierdo activo */}
-            {isActive && (
+            {isActive && !hasAlert && (
               <motion.div
                 layoutId="activeBar"
                 style={{
@@ -206,30 +228,44 @@ function NavItem({ item, onClose, collapsed, index, badges = {} }) {
                 }}
               />
             )}
+            {hasAlert && (
+              <motion.div
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+                style={{
+                  position: 'absolute', left: 0, top: 6, bottom: 6,
+                  width: 3, borderRadius: 99,
+                  background: 'linear-gradient(to bottom, #EF4444, #DC2626)',
+                  boxShadow: '0 0 8px #EF444488',
+                }}
+              />
+            )}
 
-            {/* Ícono */}
+            {/* Ícono con shake */}
             <div style={{
               width: 30, height: 30, borderRadius: 9, flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: isActive
-                ? `${item.color}22`
-                : 'rgba(255,255,255,0.05)',
+              background: hasAlert
+                ? 'rgba(239,68,68,0.18)'
+                : isActive ? `${item.color}22` : 'rgba(255,255,255,0.05)',
               transition: 'background 0.2s',
             }}>
-              <Icon
-                size={15}
-                strokeWidth={isActive ? 2.2 : 1.7}
-                style={{
-                  color: isActive ? item.color : 'rgba(255,255,255,0.40)',
-                  transition: 'color 0.2s',
-                }}
-              />
+              <motion.div animate={shakeAnim} transition={shakeTrans}>
+                <Icon
+                  size={15}
+                  strokeWidth={isActive || hasAlert ? 2.2 : 1.7}
+                  style={{
+                    color: hasAlert ? alertColor : isActive ? item.color : 'rgba(255,255,255,0.40)',
+                    transition: 'color 0.2s',
+                  }}
+                />
+              </motion.div>
             </div>
 
             {/* Label */}
             <span style={{
-              fontSize: 13, fontWeight: isActive ? 600 : 400,
-              color: isActive ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.62)',
+              fontSize: 13, fontWeight: isActive || hasAlert ? 600 : 400,
+              color: hasAlert ? '#FCA5A5' : isActive ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.62)',
               letterSpacing: '0.01em', transition: 'color 0.2s',
               flex: 1,
             }}>
@@ -249,7 +285,7 @@ function NavItem({ item, onClose, collapsed, index, badges = {} }) {
             )}
 
             {/* Dot activo derecho */}
-            {isActive && (
+            {isActive && !hasAlert && (
               <motion.div
                 initial={{ scale: 0 }} animate={{ scale: 1 }}
                 style={{
