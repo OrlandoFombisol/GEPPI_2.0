@@ -550,6 +550,13 @@ export const alertaDB = {
   async marcarLeida(id) {
     await q('alerta.marcarLeida', supabase.from('alerta').update({ leida: true }).eq('id', id))
   },
+  async gestionar(id, accionTomada) {
+    await q('alerta.gestionar', supabase.from('alerta').update({
+      leida: true, gestionada: true,
+      accion_tomada: accionTomada,
+      fecha_gestion: new Date().toISOString(),
+    }).eq('id', id))
+  },
   async marcarTodasLeidas() {
     await q('alerta.marcarTodasLeidas', supabase.from('alerta').update({ leida: true }).eq('leida', false))
   },

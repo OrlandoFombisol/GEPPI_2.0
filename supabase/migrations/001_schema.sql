@@ -484,3 +484,8 @@ alter table public.checklist_preoperacional
   add column if not exists vehiculo_placa     text,
   add column if not exists items              jsonb,
   add column if not exists observacion_general text;
+
+alter table public.alerta
+  add column if not exists gestionada    boolean default false,
+  add column if not exists accion_tomada text,
+  add column if not exists fecha_gestion timestamptz;
