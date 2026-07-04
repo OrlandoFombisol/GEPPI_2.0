@@ -566,6 +566,38 @@ export const alertaDB = {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  INSPECCIONES DE SEGURIDAD
+// ─────────────────────────────────────────────────────────────────────────────
+
+const INSPECCION_SELECT = '*, empresa:empresa_id(id, razon_social, ciudad)'
+
+export const inspeccionDB = {
+  async getAll() {
+    const data = await q('inspeccion.getAll',
+      supabase.from('inspeccion').select(INSPECCION_SELECT).order('id', { ascending: false }))
+    return manyFromDB(data)
+  },
+  async getPorEmpresa(empresaId) {
+    const data = await q('inspeccion.getPorEmpresa',
+      supabase.from('inspeccion').select(INSPECCION_SELECT).eq('empresa_id', empresaId).order('id', { ascending: false }))
+    return manyFromDB(data)
+  },
+  async getById(id) {
+    const data = await one('inspeccion.getById',
+      supabase.from('inspeccion').select(INSPECCION_SELECT).eq('id', id).single())
+    return fromDB(data)
+  },
+  async create(data) {
+    const row = await one('inspeccion.create',
+      supabase.from('inspeccion').insert(toDB(data)).select('id').single())
+    return row?.id
+  },
+  async remove(id) {
+    await q('inspeccion.remove', supabase.from('inspeccion').delete().eq('id', id))
+  },
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  EVIDENCIAS PLAN DE TRABAJO
 // ─────────────────────────────────────────────────────────────────────────────
 

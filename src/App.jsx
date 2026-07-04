@@ -34,6 +34,7 @@ const IndicadoresCumplimiento = lazy(() => import('@/pages/IndicadoresCumplimien
 const SgSst0312               = lazy(() => import('@/pages/SgSst0312'))
 const UsuariosRoles           = lazy(() => import('@/pages/UsuariosRoles'))
 const AceptarEntrega          = lazy(() => import('@/pages/AceptarEntrega'))
+const Inspecciones            = lazy(() => import('@/pages/Inspecciones'))
 
 // ─── Guarda de ruta ───────────────────────────────────────────────────────────
 function ProtectedRoute({ children }) {
@@ -287,6 +288,10 @@ export default function App() {
           <Route
             path="/usuarios-roles"
             element={<Suspense fallback={<PageLoader />}><UsuariosRoles /></Suspense>}
+          />
+          <Route
+            path="/inspecciones"
+            element={<Suspense fallback={<PageLoader />}><Inspecciones /></Suspense>}
           />
 
         </Route>

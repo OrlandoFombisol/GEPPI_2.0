@@ -58,6 +58,7 @@ const NAV_SECTIONS = [
     label: 'Seguridad Vial',
     items: [
       { label: 'Checklist Preop.',   path: '/checklist',      icon: CheckSquare,     color: '#34D399' },
+      { label: 'Inspecciones SST',   path: '/inspecciones',   icon: ClipboardCheck,  color: '#38BDF8' },
     ],
   },
   {
