@@ -477,3 +477,10 @@ alter table public.epp
 
 alter table public.trabajador
   add column if not exists genero text;
+
+alter table public.checklist_preoperacional
+  add column if not exists foto_base64        text,
+  add column if not exists foto_fecha         timestamptz,
+  add column if not exists vehiculo_placa     text,
+  add column if not exists items              jsonb,
+  add column if not exists observacion_general text;
