@@ -75,6 +75,11 @@ const ROUTE_CONFIG = {
     title: 'Configuración',
     color: '#39B54A',
   },
+  '/inspecciones': {
+    img:   'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1400&q=75',
+    title: 'Inspecciones de Seguridad',
+    color: '#0369a1',
+  },
 }
 
 // ── Tips SST aleatorios ───────────────────────────────────────────────────────
