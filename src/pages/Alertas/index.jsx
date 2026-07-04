@@ -37,10 +37,15 @@ const TIPO_LABEL   = {
 
 // ─── Tarjeta especial: Checklist hallazgo ─────────────────────────────────────
 
-function ChecklistAlertaCard({ alerta, onMarcarLeida }) {
-  const [checklist, setChecklist] = useState(null)
-  const isLeida = Boolean(alerta.leida)
-  const esCritico = alerta.nivel === 'CRITICO'
+function ChecklistAlertaCard({ alerta, onMarcarLeida, onGestionada }) {
+  const [checklist,   setChecklist]   = useState(null)
+  const [gestionando, setGestionando] = useState(false)
+  const [accion,      setAccion]      = useState('')
+  const [guardando,   setGuardando]   = useState(false)
+
+  const isLeida      = Boolean(alerta.leida)
+  const esGestionada = Boolean(alerta.gestionada)
+  const esCritico    = alerta.nivel === 'CRITICO'
 
   useEffect(() => {
     if (!alerta.referenciaId) return
@@ -52,10 +57,20 @@ function ChecklistAlertaCard({ alerta, onMarcarLeida }) {
   const itemsMalo    = checklist?.items?.filter(i => i.estado === 'MALO')    || []
   const itemsRegular = checklist?.items?.filter(i => i.estado === 'REGULAR') || []
 
+  const handleGestionar = async () => {
+    if (!accion.trim()) return
+    setGuardando(true)
+    try {
+      await alertaDB.gestionar(alerta.id, accion.trim())
+      onGestionada(alerta.id, accion.trim())
+      setGestionando(false)
+    } finally { setGuardando(false) }
+  }
+
   return (
     <div className={[
       'rounded-xl border transition-colors overflow-hidden',
-      isLeida ? 'opacity-60' : '',
+      esGestionada ? 'opacity-70' : '',
       esCritico ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50',
     ].join(' ')}>
 
@@ -66,12 +81,17 @@ function ChecklistAlertaCard({ alerta, onMarcarLeida }) {
           <span className={`text-xs font-bold ${esCritico ? 'text-red-700' : 'text-yellow-700'}`}>
             Checklist preoperacional — {esCritico ? 'CRÍTICO' : 'ADVERTENCIA'}
           </span>
+          {esGestionada && (
+            <span className="text-xs font-bold bg-green-600 text-white px-2 py-0.5 rounded-full">
+              GESTIONADA
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-400 font-mono">
             {formatearFechaHora(alerta.fechaGeneracion)}
           </span>
-          {!isLeida && (
+          {!isLeida && !esGestionada && (
             <button onClick={() => onMarcarLeida(alerta.id)} title="Marcar como leída"
               className="p-1 rounded text-slate-400 hover:text-green-600 hover:bg-green-100 transition-colors">
               <BellOff size={13} />
@@ -106,7 +126,7 @@ function ChecklistAlertaCard({ alerta, onMarcarLeida }) {
 
           {itemsMalo.length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs font-bold text-red-700 uppercase tracking-wide">MALO</p>
+              <p className="text-xs font-bold text-red-700 uppercase tracking-wide">Malo</p>
               <div className="flex flex-wrap gap-1">
                 {itemsMalo.map(i => (
                   <span key={i.id} className="text-xs bg-red-100 text-red-800 border border-red-200 px-2 py-0.5 rounded-full">
@@ -119,7 +139,7 @@ function ChecklistAlertaCard({ alerta, onMarcarLeida }) {
 
           {itemsRegular.length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs font-bold text-yellow-700 uppercase tracking-wide">REGULAR</p>
+              <p className="text-xs font-bold text-yellow-700 uppercase tracking-wide">Regular</p>
               <div className="flex flex-wrap gap-1">
                 {itemsRegular.map(i => (
                   <span key={i.id} className="text-xs bg-yellow-100 text-yellow-800 border border-yellow-200 px-2 py-0.5 rounded-full">
@@ -131,6 +151,54 @@ function ChecklistAlertaCard({ alerta, onMarcarLeida }) {
           )}
         </div>
       </div>
+
+      {/* Acción tomada (si ya está gestionada) */}
+      {esGestionada && alerta.accionTomada && (
+        <div className="mx-4 mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-xs font-semibold text-green-700 mb-0.5">Acción registrada</p>
+          <p className="text-xs text-green-800">{alerta.accionTomada}</p>
+        </div>
+      )}
+
+      {/* Panel de gestión */}
+      {!esGestionada && (
+        <div className="px-4 pb-4">
+          {!gestionando ? (
+            <button
+              onClick={() => setGestionando(true)}
+              className="text-xs font-semibold bg-white border border-slate-300 hover:border-primary-400 hover:text-primary-700 text-slate-600 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              Gestionar hallazgo
+            </button>
+          ) : (
+            <div className="space-y-2 bg-white border border-slate-200 rounded-xl p-3">
+              <p className="text-xs font-semibold text-slate-700">¿Qué acción se tomó?</p>
+              <textarea
+                value={accion}
+                onChange={e => setAccion(e.target.value)}
+                rows={2}
+                placeholder="Ej: Vehículo enviado a mantenimiento, extintor reemplazado…"
+                className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              />
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => { setGestionando(false); setAccion('') }}
+                  className="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleGestionar}
+                  disabled={!accion.trim() || guardando}
+                  className="text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-1.5 rounded-lg transition-colors"
+                >
+                  {guardando ? 'Guardando…' : 'Registrar acción'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -479,6 +547,11 @@ export default function Page() {
     await alertaDB.marcarTodasLeidas()
     setAlertas(prev => prev.map(a => ({ ...a, leida: 1 })))
   }
+  const registrarGestion = (id, accionTomada) => {
+    setAlertas(prev => prev.map(a =>
+      a.id === id ? { ...a, leida: true, gestionada: true, accionTomada } : a
+    ))
+  }
 
   const handleGenerar = async () => {
     setGenerando(true); setMsgNuevas(null)
@@ -616,7 +689,7 @@ export default function Page() {
             <div className="space-y-2">
               {alertasFiltradas.map(a =>
                 a.tipo === 'CHECKLIST_HALLAZGO'
-                  ? <ChecklistAlertaCard key={a.id} alerta={a} onMarcarLeida={marcarLeida} />
+                  ? <ChecklistAlertaCard key={a.id} alerta={a} onMarcarLeida={marcarLeida} onGestionada={registrarGestion} />
                   : <AlertaCard         key={a.id} alerta={a} onMarcarLeida={marcarLeida} />
               )}
             </div>
