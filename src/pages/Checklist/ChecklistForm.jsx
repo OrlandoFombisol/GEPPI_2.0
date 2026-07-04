@@ -13,6 +13,7 @@ const ITEMS_CHECKLIST = [
   { id: 'direccionales',      grupo: 'Iluminación',  label: 'Direccionales / pitos' },
   { id: 'frenos_pie',         grupo: 'Frenos',       label: 'Freno de pie (principal)' },
   { id: 'freno_mano',         grupo: 'Frenos',       label: 'Freno de mano (estacionamiento)' },
+  { id: 'freno_aire',         grupo: 'Frenos',       label: 'Freno de aire' },
   { id: 'llanta_delantera_i', grupo: 'Llantas',      label: 'Llanta delantera izquierda' },
   { id: 'llanta_delantera_d', grupo: 'Llantas',      label: 'Llanta delantera derecha' },
   { id: 'llanta_trasera_i',   grupo: 'Llantas',      label: 'Llanta trasera izquierda' },
