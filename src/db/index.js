@@ -566,6 +566,66 @@ export const alertaDB = {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  EVIDENCIAS PLAN DE TRABAJO
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TIPOS_PERMITIDOS = [
+  'image/jpeg', 'image/png',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+]
+const MAX_BYTES   = 5 * 1024 * 1024  // 5 MB
+const MAX_POR_ACT = 5                 // máx. evidencias por actividad
+
+export const evidenciaDB = {
+  async getByPlan(planId) {
+    const data = await q('evidencia.getByPlan',
+      supabase.from('evidencia_plan').select('*').eq('plan_id', planId).order('fecha_subida', { ascending: false }))
+    return manyFromDB(data)
+  },
+  async upload(planId, file, usuarioId) {
+    if (!TIPOS_PERMITIDOS.includes(file.type))
+      throw new Error('Tipo no permitido. Solo JPG, PNG, PDF o Excel.')
+    if (file.size > MAX_BYTES)
+      throw new Error(`El archivo supera el límite de 5 MB (pesa ${(file.size / 1024 / 1024).toFixed(1)} MB).`)
+
+    const { count } = await supabase
+      .from('evidencia_plan').select('id', { count: 'exact', head: true }).eq('plan_id', planId)
+    if ((count || 0) >= MAX_POR_ACT)
+      throw new Error(`Límite alcanzado: máximo ${MAX_POR_ACT} evidencias por actividad.`)
+
+    const nombreSeguro = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '')
+    const path = `${planId}/${Date.now()}_${nombreSeguro}`
+
+    const { error: upErr } = await supabase.storage
+      .from('evidencias').upload(path, file, { contentType: file.type, upsert: false })
+    if (upErr) throw new Error('Error al subir el archivo: ' + upErr.message)
+
+    const tipo = file.type.includes('image') ? 'imagen'
+               : file.type.includes('pdf')   ? 'pdf'
+               : 'excel'
+
+    await q('evidencia.create',
+      supabase.from('evidencia_plan').insert({
+        plan_id: planId, nombre: file.name, tipo,
+        storage_path: path, tamaño_bytes: file.size,
+        usuario_id: usuarioId || null,
+      }))
+  },
+  async getUrl(storagePath) {
+    const { data, error } = await supabase.storage
+      .from('evidencias').createSignedUrl(storagePath, 3600)
+    if (error) throw new Error('No se pudo obtener el enlace del archivo.')
+    return data.signedUrl
+  },
+  async remove(id, storagePath) {
+    await supabase.storage.from('evidencias').remove([storagePath])
+    await q('evidencia.remove', supabase.from('evidencia_plan').delete().eq('id', id))
+  },
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  GESTIÓN DEL CAMBIO
 // ─────────────────────────────────────────────────────────────────────────────
 

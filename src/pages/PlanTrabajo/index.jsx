@@ -1,15 +1,17 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
   ClipboardCheck, Plus, AlertTriangle, CheckCircle2,
-  Circle, Building2, Filter, Calendar,
+  Circle, Building2, Filter, Calendar, Paperclip,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
 } from 'recharts'
 import { planTrabajoDB, empresaDB } from '@/db'
+import { useUser } from '@/contexts/UserContext'
 import { Badge, Button, Card, StatsCard } from '@/components/ui'
-import ActividadModal from './ActividadModal'
+import ActividadModal  from './ActividadModal'
+import EvidenciaPanel  from './EvidenciaPanel'
 
 const AÑO_ACTUAL = new Date().getFullYear()
 const MES_ACTUAL = new Date().getMonth() + 1
@@ -98,7 +100,7 @@ function EmpresaCompliance({ empresa, actividades }) {
 }
 
 // ─── Fila de actividad ────────────────────────────────────────────────────────
-function FilaActividad({ act, onEdit, onDelete, onToggle }) {
+function FilaActividad({ act, onEdit, onDelete, onToggle, onEvidencias }) {
   const esEjecutado = act.estado === 'EJECUTADO'
   return (
     <tr className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
@@ -144,6 +146,13 @@ function FilaActividad({ act, onEdit, onDelete, onToggle }) {
       <td className="px-4 py-3 text-center">
         <div className="flex items-center justify-center gap-1">
           <button
+            onClick={() => onEvidencias(act)}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+            title="Ver / subir evidencias"
+          >
+            <Paperclip size={14} />
+          </button>
+          <button
             onClick={() => onEdit(act)}
             className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
           >
@@ -163,12 +172,14 @@ function FilaActividad({ act, onEdit, onDelete, onToggle }) {
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function PlanTrabajo() {
+  const { user }                      = useUser()
   const [actividades, setActividades] = useState([])
   const [empresas,    setEmpresas]    = useState([])
   const [loading,     setLoading]     = useState(true)
   const [saving,      setSaving]      = useState(false)
   const [modal,       setModal]       = useState(null)
   const [confirmar,   setConfirmar]   = useState(null)
+  const [evidenciaAct, setEvidenciaAct] = useState(null)
 
   // Filtros
   const [filtroAño,     setFiltroAño]     = useState(AÑO_ACTUAL)
@@ -513,6 +524,7 @@ export default function PlanTrabajo() {
                     onEdit={setModal}
                     onDelete={setConfirmar}
                     onToggle={toggleEstado}
+                    onEvidencias={setEvidenciaAct}
                   />
                 ))}
               </tbody>
@@ -520,6 +532,15 @@ export default function PlanTrabajo() {
           </div>
         )}
       </Card>
+
+      {/* ── Panel de evidencias ─────────────────────────────────────────── */}
+      {evidenciaAct && (
+        <EvidenciaPanel
+          actividad={evidenciaAct}
+          usuarioId={user?.id}
+          onClose={() => setEvidenciaAct(null)}
+        />
+      )}
 
       {/* ── Modal crear/editar ───────────────────────────────────────────── */}
       {modal !== null && (
