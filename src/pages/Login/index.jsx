@@ -669,8 +669,8 @@ function RightPanel({ onSubmit, form, setForm, showPass, setShowPass, loading, e
         transition={{delay:0.72,duration:0.45}}
         style={{display:'flex',flexDirection:'column',gap:14}}>
         {[
-          {key:'email',   label:'CORREO ELECTRÓNICO',type:'email',   placeholder:'usuario@empresa.co',isPass:false},
-          {key:'password',label:'CONTRASEÑA',         type:'password',placeholder:'••••••••',          isPass:true },
+          {key:'email',   label:'CORREO ELECTRÓNICO',type:'email',   placeholder:'usuario@empresa.co',isPass:false,autoComplete:'email'          },
+          {key:'password',label:'CONTRASEÑA',         type:'password',placeholder:'••••••••',          isPass:true, autoComplete:'current-password'},
         ].map(field=>(
           <div key={field.key}>
             <label style={{color:C.lightFaint,fontSize:10,fontWeight:700,
@@ -683,6 +683,7 @@ function RightPanel({ onSubmit, form, setForm, showPass, setShowPass, loading, e
                 value={form[field.key]}
                 onChange={e=>setForm(f=>({...f,[field.key]:e.target.value}))}
                 placeholder={field.placeholder}
+                autoComplete={field.autoComplete}
                 style={{width:'100%',height:44,
                        padding:field.isPass?'0 44px 0 16px':'0 16px',
                        background:'rgba(27,98,204,0.07)',
@@ -1216,7 +1217,7 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading]   = useState(false)
   const [loginError, setLoginError] = useState('')
-  const [form, setForm]         = useState({ email:'admin@geppi.com', password:'' })
+  const [form, setForm]         = useState({ email:'admin@geppi.com', password:'123456' })
 
   const total = IMAGES.length
   const next  = useCallback(()=>setCurrent(c=>(c+1)%total),[total])
