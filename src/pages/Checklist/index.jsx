@@ -158,7 +158,7 @@ export default function Page() {
             Inspección diaria de vehículos conforme SST.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 justify-end">
           <Button variant="secondary" iconLeft={QrCode} onClick={() => setVerQr(true)}>
             QR de acceso
           </Button>

@@ -52,25 +52,23 @@ const GRUPOS = [...new Set(ITEMS_CHECKLIST.map(i => i.grupo))]
 // ─── Ítem individual ──────────────────────────────────────────────────────────
 function ItemRow({ item, valor, observacion, onCambio, onObservacion }) {
   return (
-    <div className="py-3 border-b border-slate-100 last:border-0">
-      <div className="flex items-start justify-between gap-3">
-        <span className="text-sm text-slate-800 font-medium flex-1 leading-snug pt-1">{item.label}</span>
-        <div className="flex gap-1 flex-shrink-0">
-          {ESTADOS.map(({ value, label, Icon, idle, active }) => (
-            <button key={value} type="button"
-              onClick={() => onCambio(item.id, value)}
-              className={['px-2 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all flex items-center gap-1', valor === value ? active : idle].join(' ')}
-            >
-              {Icon && <Icon size={11} />}
-              {label}
-            </button>
-          ))}
-        </div>
+    <div className="py-3 border-b border-slate-100 last:border-0 space-y-2">
+      <span className="text-sm text-slate-800 font-medium leading-snug block">{item.label}</span>
+      <div className="flex gap-1.5">
+        {ESTADOS.map(({ value, label, Icon, idle, active }) => (
+          <button key={value} type="button"
+            onClick={() => onCambio(item.id, value)}
+            className={['flex-1 py-2 rounded-lg text-[11px] font-bold border-2 transition-all flex items-center justify-center gap-1', valor === value ? active : idle].join(' ')}
+          >
+            {Icon && <Icon size={11} />}
+            {label}
+          </button>
+        ))}
       </div>
       {(valor === 'MALO' || valor === 'REGULAR') && (
         <input type="text" value={observacion || ''} onChange={e => onObservacion(item.id, e.target.value)}
           placeholder="Describir hallazgo…"
-          className="mt-2 w-full h-8 px-3 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="w-full h-9 px-3 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
         />
       )}
     </div>
