@@ -367,7 +367,7 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
 
   const badges = { alertas: alertCount }
 
-  const isSectionOpen = (label) => openSections[label] !== false  // abierta por defecto
+  const isSectionOpen = (label) => openSections[label] === true   // cerrada por defecto
 
   const toggleSection = (label) => {
     setOpenSections(prev => {
