@@ -164,28 +164,27 @@ export default function Inspecciones() {
 
   const detalleInspeccion = inspecciones.find(i => i.id === detalleId) || null
 
-  if (vistaForm) {
-    return (
-      <InspeccionForm
-        empresas={empresas}
-        actividadesPAT={actividades}
-        usuarioId={user?.id}
-        onGuardado={() => { setVistaForm(false); cargarDatos() }}
-        onCancelar={() => setVistaForm(false)}
-      />
-    )
-  }
-
-  if (detalleInspeccion) {
-    return (
-      <InspeccionDetalle
-        inspeccion={detalleInspeccion}
-        onVolver={() => setDetalleId(null)}
-      />
-    )
-  }
-
   return (
+    <>
+    {/* Modales superpuestos — no reemplazan la página */}
+    <AnimatePresence>
+      {vistaForm && (
+        <InspeccionForm
+          empresas={empresas}
+          actividadesPAT={actividades}
+          usuarioId={user?.id}
+          onGuardado={() => { setVistaForm(false); cargarDatos() }}
+          onCancelar={() => setVistaForm(false)}
+        />
+      )}
+      {detalleInspeccion && (
+        <InspeccionDetalle
+          inspeccion={detalleInspeccion}
+          onVolver={() => setDetalleId(null)}
+        />
+      )}
+    </AnimatePresence>
+    <div> {/* wrapper para el return único */}
     <div className="p-3 sm:p-6 space-y-5">
 
       {/* ── Cabecera ──────────────────────────────────────────────────────── */}
@@ -310,5 +309,6 @@ export default function Inspecciones() {
       </AnimatePresence>
 
     </div>
+    </> // cierre wrapper modales
   )
 }
