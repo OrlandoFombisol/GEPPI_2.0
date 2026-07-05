@@ -1216,7 +1216,7 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading]   = useState(false)
   const [loginError, setLoginError] = useState('')
-  const [form, setForm]         = useState({ email:'admin@geppi.co', password:'' })
+  const [form, setForm]         = useState({ email:'admin@geppi.com', password:'' })
 
   const total = IMAGES.length
   const next  = useCallback(()=>setCurrent(c=>(c+1)%total),[total])
