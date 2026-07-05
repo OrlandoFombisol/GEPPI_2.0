@@ -1248,7 +1248,7 @@ export default function Login() {
         initial={{opacity:0, x:-80}}
         animate={splashDone ? {opacity:1, x:0} : {opacity:0, x:-80}}
         transition={{type:'spring', stiffness:160, damping:22, delay:0.18}}
-        style={{flex:'0 0 58%',position:'relative',display:'flex',flexDirection:'column',
+        style={{flex:'0 0 58%',position:'relative',flexDirection:'column',
                 alignItems:'center',justifyContent:'center',overflow:'hidden',gap:0}}
         className="hidden lg:flex">
 
@@ -1321,8 +1321,8 @@ export default function Login() {
         animate={splashDone ? {opacity:1, x:0} : {opacity:0, x:80}}
         transition={{type:'spring', stiffness:160, damping:22, delay:0.26}}
         style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
-               justifyContent:'center',padding:'32px 40px',background:C.bgRight,
-               overflowY:'auto'}}>
+               justifyContent:'center',background:C.bgRight,overflowY:'auto'}}
+        className="px-5 py-8 sm:px-10">
         <RightPanel
           onSubmit={handleSubmit}
           form={form} setForm={setForm}
