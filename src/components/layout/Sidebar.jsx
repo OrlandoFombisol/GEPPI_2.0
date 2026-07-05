@@ -263,39 +263,33 @@ function NavItem({ item, onClose, collapsed, badges = {} }) {
 
 // ─── Encabezado de sección colapsable (Opción A: etiqueta plana tipo VS Code) ──
 function SectionHeader({ label, sectionColor, open, onToggle, hasActive }) {
+  const lineColor = hasActive ? `${sectionColor}35` : 'rgba(255,255,255,0.07)'
+  const textColor = hasActive ? sectionColor : 'rgba(255,255,255,0.28)'
   return (
     <button
       onClick={onToggle}
       style={{
-        width: '100%', display: 'flex', alignItems: 'center', gap: 7,
-        padding: '12px 4px 4px 6px', background: 'none', border: 'none', cursor: 'pointer',
+        width: '100%', display: 'flex', alignItems: 'center', gap: 6,
+        padding: '12px 4px 4px', background: 'none', border: 'none', cursor: 'pointer',
       }}
     >
-      {/* Etiqueta uppercase muy pequeña */}
+      <div style={{ flex: 1, height: 1, background: lineColor, transition: 'background 0.2s' }} />
+
       <span style={{
         fontSize: 9.5, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase',
-        color: hasActive ? sectionColor : 'rgba(255,255,255,0.28)',
-        whiteSpace: 'nowrap', flexShrink: 0,
-        transition: 'color 0.2s',
+        color: textColor, whiteSpace: 'nowrap', flexShrink: 0, transition: 'color 0.2s',
       }}>
         {label}
       </span>
 
-      {/* Línea separadora */}
-      <div style={{
-        flex: 1, height: 1,
-        background: hasActive ? `${sectionColor}35` : 'rgba(255,255,255,0.07)',
-        transition: 'background 0.2s',
-      }} />
+      <div style={{ flex: 1, height: 1, background: lineColor, transition: 'background 0.2s' }} />
 
-      {/* Chevron mínimo */}
       <motion.div
         animate={{ rotate: open ? 0 : -90 }}
         transition={{ duration: 0.20, ease: [0.4, 0, 0.2, 1] }}
         style={{ flexShrink: 0, display: 'flex' }}
       >
-        <ChevronDown size={11}
-          style={{ color: hasActive ? sectionColor : 'rgba(255,255,255,0.22)', display: 'block' }} />
+        <ChevronDown size={11} style={{ color: textColor, display: 'block' }} />
       </motion.div>
     </button>
   )
