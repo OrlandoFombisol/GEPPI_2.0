@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
-import { CheckSquare, Plus, Download } from 'lucide-react'
+import { CheckSquare, Plus, Download, QrCode } from 'lucide-react'
 import { checklistDB, vehiculoDB, empresaDB } from '@/db'
 import { formatearFecha }                     from '@/utils/dates'
 import { Badge, Button, Card, DataTable, Modal }             from '@/components/ui'
 import ChecklistForm   from './ChecklistForm'
 import ChecklistDetalle from './ChecklistDetalle'
+import QrAccesoModal   from './QrAccesoModal'
 import * as XLSX from 'xlsx'
 
 // ─── Columnas tabla ───────────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ export default function Page() {
 
   const [vistaForm,    setVistaForm]    = useState(false)
   const [detalle,      setDetalle]      = useState(null)
+  const [verQr,        setVerQr]        = useState(false)
 
   // Filtros
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
@@ -157,6 +159,9 @@ export default function Page() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="secondary" iconLeft={QrCode} onClick={() => setVerQr(true)}>
+            QR de acceso
+          </Button>
           <Button variant="secondary" iconLeft={Download} onClick={exportarExcel} disabled={filtrados.length === 0}>
             Exportar Excel
           </Button>
@@ -219,6 +224,8 @@ export default function Page() {
           className="p-4"
         />
       </Card>
+
+      {verQr && <QrAccesoModal onClose={() => setVerQr(false)} />}
     </div>
   )
 }
