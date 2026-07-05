@@ -35,6 +35,7 @@ const SgSst0312               = lazy(() => import('@/pages/SgSst0312'))
 const UsuariosRoles           = lazy(() => import('@/pages/UsuariosRoles'))
 const AceptarEntrega          = lazy(() => import('@/pages/AceptarEntrega'))
 const Inspecciones            = lazy(() => import('@/pages/Inspecciones'))
+const Operario                = lazy(() => import('@/pages/Operario'))
 
 // ─── Guarda de ruta ───────────────────────────────────────────────────────────
 function ProtectedRoute({ children }) {
@@ -174,6 +175,12 @@ export default function App() {
         <Route
           path="/aceptar/:token"
           element={<Suspense fallback={<PageLoader />}><AceptarEntrega /></Suspense>}
+        />
+
+        {/* Ruta pública — checklist preoperacional para conductores */}
+        <Route
+          path="/operario"
+          element={<Suspense fallback={<PageLoader />}><Operario /></Suspense>}
         />
 
         {/* Login — pantalla de entrada */}
