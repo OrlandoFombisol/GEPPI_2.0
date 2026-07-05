@@ -1,28 +1,31 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Plus, Search, Check, AlertTriangle, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, Check, AlertTriangle, Pencil, Trash2, Save, X } from 'lucide-react'
 import { cargoDB, eppDB, asignacionDB }         from '@/db'
 import { Badge, Button, Modal }                 from '@/components/ui'
 import CargoModal                               from './CargoModal'
 
-// ─── Celda toggle (optimista) ─────────────────────────────────────────────────
+// ─── Celda toggle con estado pendiente ───────────────────────────────────────
 
-function CeldaToggle({ activa, enFlight, onClick }) {
+function CeldaToggle({ activa, pendiente, onClick }) {
+  const cls = pendiente
+    ? activa
+      ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm ring-2 ring-amber-300'
+      : 'bg-amber-100 hover:bg-amber-200 ring-2 ring-amber-400'
+    : activa
+      ? 'bg-primary-700 hover:bg-primary-800 text-white shadow-sm'
+      : 'bg-slate-100 hover:bg-slate-200 text-slate-300'
+
   return (
     <button
       onClick={onClick}
-      disabled={enFlight}
-      title={activa ? 'Asignado — clic para quitar' : 'No asignado — clic para agregar'}
-      className={[
-        'w-8 h-8 rounded-md flex items-center justify-center transition-all select-none',
-        activa
-          ? 'bg-primary-700 hover:bg-primary-800 text-white shadow-sm'
-          : 'bg-slate-100 hover:bg-slate-200 text-slate-300',
-        enFlight ? 'opacity-40 cursor-wait' : 'cursor-pointer',
-      ].join(' ')}
+      title={pendiente ? 'Cambio pendiente — clic para cancelar' : activa ? 'Asignado — clic para quitar' : 'No asignado — clic para agregar'}
+      className={['w-8 h-8 rounded-md flex items-center justify-center transition-all select-none cursor-pointer', cls].join(' ')}
     >
       {activa
         ? <Check size={13} strokeWidth={2.5} />
-        : <span className="w-1.5 h-1.5 rounded-full bg-slate-300 block" />}
+        : pendiente
+          ? <span className="w-2 h-2 rounded-full bg-amber-400 block" />
+          : <span className="w-1.5 h-1.5 rounded-full bg-slate-300 block" />}
     </button>
   )
 }
@@ -55,15 +58,16 @@ function ModalConfirmarCargo({ cargo, onConfirm, onClose, saving }) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function Page() {
-  const [cargos,      setCargos]      = useState([])
-  const [epps,        setEpps]        = useState([])
-  const [asignadas,   setAsignadas]   = useState(new Set())  // Set<"cargoId-eppId">
-  const [enFlight,    setEnFlight]    = useState(new Set())  // Set<"cargoId-eppId"> en tránsito
-  const [loading,     setLoading]     = useState(true)
-  const [saving,      setSaving]      = useState(false)
-  const [buscar,      setBuscar]      = useState('')
-  const [modalCargo,  setModalCargo]  = useState(null)
-  const [confirmar,   setConfirmar]   = useState(null)
+  const [cargos,           setCargos]           = useState([])
+  const [epps,             setEpps]             = useState([])
+  const [asignadasSalvadas, setAsignadasSalvadas] = useState(new Set()) // estado guardado en DB
+  const [pendientes,       setPendientes]       = useState(new Map())   // Map<key, deseado:bool>
+  const [loading,          setLoading]          = useState(true)
+  const [saving,           setSaving]           = useState(false)
+  const [buscar,           setBuscar]           = useState('')
+  const [modalCargo,       setModalCargo]       = useState(null)
+  const [confirmar,        setConfirmar]        = useState(null)
+  const [confirmarGuardar, setConfirmarGuardar] = useState(false)
 
   // ── Carga inicial ─────────────────────────────────────────────────────────
   useEffect(() => { cargar() }, [])
@@ -85,46 +89,55 @@ export default function Page() {
           .filter(a => a.vigente !== false)
           .map(a => `${a.cargoId}-${a.eppId}`)
       )
-      setAsignadas(activas)
+      setAsignadasSalvadas(activas)
+      setPendientes(new Map())
     } finally {
       setLoading(false)
     }
   }
 
-  // ── Toggle optimista ──────────────────────────────────────────────────────
-  const handleToggle = useCallback(async (cargoId, eppId) => {
+  // ── Estado visual = salvadas + pendientes aplicadas ──────────────────────
+  const asignadas = useMemo(() => {
+    const result = new Set(asignadasSalvadas)
+    for (const [key, deseado] of pendientes) {
+      if (deseado) result.add(key)
+      else result.delete(key)
+    }
+    return result
+  }, [asignadasSalvadas, pendientes])
+
+  // ── Toggle local (sin guardar en DB) ─────────────────────────────────────
+  const handleToggle = useCallback((cargoId, eppId) => {
     const key = `${cargoId}-${eppId}`
-    if (enFlight.has(key)) return
-
-    const eraActiva = asignadas.has(key)
-
-    // Marcar en tránsito
-    setEnFlight(prev => new Set([...prev, key]))
-
-    // Actualización optimista local
-    setAsignadas(prev => {
-      const next = new Set(prev)
-      eraActiva ? next.delete(key) : next.add(key)
+    const estadoSalvado = asignadasSalvadas.has(key)
+    setPendientes(prev => {
+      const next = new Map(prev)
+      if (next.has(key)) {
+        next.delete(key) // cancelar cambio pendiente → vuelve al estado guardado
+      } else {
+        next.set(key, !estadoSalvado) // registrar nuevo cambio deseado
+      }
       return next
     })
+  }, [asignadasSalvadas])
 
+  // ── Guardar cambios pendientes ────────────────────────────────────────────
+  const handleGuardar = async () => {
+    setSaving(true)
     try {
-      await asignacionDB.toggle(cargoId, eppId)
-    } catch {
-      // Revertir si falla
-      setAsignadas(prev => {
-        const next = new Set(prev)
-        eraActiva ? next.add(key) : next.delete(key)
-        return next
-      })
+      for (const [key, deseado] of pendientes) {
+        const [cargoId, eppId] = key.split('-').map(Number)
+        const actual = asignadasSalvadas.has(key)
+        if (deseado !== actual) await asignacionDB.toggle(cargoId, eppId)
+      }
+      setConfirmarGuardar(false)
+      await cargar()
     } finally {
-      setEnFlight(prev => {
-        const next = new Set(prev)
-        next.delete(key)
-        return next
-      })
+      setSaving(false)
     }
-  }, [asignadas, enFlight])
+  }
+
+  const handleDescartar = () => setPendientes(new Map())
 
   // ── CRUD Cargo ────────────────────────────────────────────────────────────
   const guardarCargo = async (data) => {
@@ -182,6 +195,8 @@ export default function Page() {
     }).length,
     [asignadas, cargos, eppsActivos]
   )
+
+  const nPendientes = pendientes.size
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -334,9 +349,9 @@ export default function Page() {
 
                       {/* Celdas de toggle */}
                       {eppsActivos.map(epp => {
-                        const key    = `${cargo.id}-${epp.id}`
-                        const activa = asignadas.has(key)
-                        const fly    = enFlight.has(key)
+                        const key      = `${cargo.id}-${epp.id}`
+                        const activa   = asignadas.has(key)
+                        const pendiente = pendientes.has(key)
                         return (
                           <td
                             key={epp.id}
@@ -344,7 +359,7 @@ export default function Page() {
                           >
                             <CeldaToggle
                               activa={activa}
-                              enFlight={fly}
+                              pendiente={pendiente}
                               onClick={() => handleToggle(cargo.id, epp.id)}
                             />
                           </td>
@@ -384,12 +399,18 @@ export default function Page() {
           </div>
 
           {/* Leyenda inferior */}
-          <div className="flex items-center gap-4 px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
+          <div className="flex items-center flex-wrap gap-4 px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
             <div className="flex items-center gap-1.5 text-xs text-slate-500">
               <div className="w-4 h-4 rounded-md bg-primary-700 flex items-center justify-center">
                 <Check size={10} className="text-white" strokeWidth={3} />
               </div>
               EPP asignado al cargo
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <div className="w-4 h-4 rounded-md bg-amber-500 flex items-center justify-center ring-2 ring-amber-300">
+                <Check size={10} className="text-white" strokeWidth={3} />
+              </div>
+              Cambio pendiente
             </div>
             <div className="flex items-center gap-1.5 text-xs text-slate-500">
               <div className="w-4 h-4 rounded-md bg-slate-100 flex items-center justify-center">
@@ -421,6 +442,69 @@ export default function Page() {
           onClose={() => setConfirmar(null)}
           saving={saving}
         />
+      )}
+
+      {/* ── Barra flotante de cambios pendientes ── */}
+      {nPendientes > 0 && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50
+                        bg-white border border-amber-300 shadow-xl rounded-2xl
+                        px-5 py-3 flex items-center gap-4
+                        animate-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center gap-2 text-amber-700">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-sm font-semibold">
+              {nPendientes} cambio{nPendientes !== 1 ? 's' : ''} sin guardar
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDescartar}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                         text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <X size={13} />
+              Descartar
+            </button>
+            <button
+              onClick={() => setConfirmarGuardar(true)}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold
+                         bg-primary-700 hover:bg-primary-800 text-white transition-colors shadow-sm"
+            >
+              <Save size={13} />
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal confirmación de guardado ── */}
+      {confirmarGuardar && (
+        <Modal
+          open
+          onClose={() => setConfirmarGuardar(false)}
+          title="Confirmar cambios en la Matriz"
+          size="sm"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setConfirmarGuardar(false)} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button onClick={handleGuardar} loading={saving} iconLeft={Save}>
+                Guardar {nPendientes} cambio{nPendientes !== 1 ? 's' : ''}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-3">
+            <p className="text-sm text-slate-700">
+              Se van a guardar <strong className="text-slate-900">{nPendientes} cambio{nPendientes !== 1 ? 's' : ''}</strong> en la Matriz por Cargos.
+            </p>
+            <p className="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
+              Las asignaciones en ámbar quedarán registradas en la base de datos.
+              Esta acción afecta las entregas futuras de EPP según cargo.
+            </p>
+          </div>
+        </Modal>
       )}
 
     </div>
