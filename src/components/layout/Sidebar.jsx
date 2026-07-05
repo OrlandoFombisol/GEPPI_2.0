@@ -1,112 +1,118 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronDown, X, LogOut, UserCog } from 'lucide-react'
 import { motion, AnimatePresence }   from 'framer-motion'
 import { useState, useEffect }       from 'react'
 import {
-  LayoutDashboard, Building2, Users, Briefcase,
-  ShieldCheck, Table2, Package, PackagePlus,
-  ClipboardList, BarChart3, Bell, GitBranch,
-  FileSearch, Settings, AlertTriangle, CheckSquare,
-  ClipboardCheck, ShieldAlert, Stethoscope, AlertOctagon,
-  BarChart2, PackageSearch,
+  // layout
+  ChevronLeft, ChevronDown, X, LogOut,
+  // nav items
+  LayoutDashboard,
+  Building2, UserCheck, Briefcase,
+  ShieldCheck, LayoutGrid, Boxes, PackagePlus, History,
+  BarChart3, FileBarChart2, BellRing,
+  Car, ListChecks, Activity,
+  CalendarCheck, HeartPulse, AlertTriangle, Stethoscope, TrendingUp, BadgeCheck,
+  Settings2, GitMerge, FileSearch, UserCog, SlidersHorizontal,
 } from 'lucide-react'
 const logoPng = '/logo.jpg'
-import { SISTEMA }      from '@/constants'
-import { useUser }      from '@/contexts/UserContext'
-import { alertaDB }     from '@/db'
+import { SISTEMA }  from '@/constants'
+import { useUser }  from '@/contexts/UserContext'
+import { alertaDB } from '@/db'
 
-// ─── Navegación reorganizada (criterio SST profesional) ──────────────────────
-//
-//  Sin sección  →  Dashboard siempre visible arriba
-//  Organización →  Datos maestros de la empresa
-//  EPP & Entregas → Todo el ciclo de vida del EPP
-//  Monitoreo    →  Reportes, consolidados, alertas
-//  Seguridad Vial → Checklist e Inspecciones
-//  SG-SST       →  Módulos del Sistema de Gestión
-//  Sistema      →  Administración (adminOnly parcial)
-//
+// ─── Datos de navegación ──────────────────────────────────────────────────────
 const NAV_SECTIONS = [
   {
-    label: null,  // sin encabezado — Dashboard siempre expuesto
+    label: null,
     items: [
       { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, color: '#4A9EFF' },
     ],
   },
   {
     label: 'Organización',
+    sectionIcon: Building2,
+    sectionColor: '#3B82F6',
     items: [
-      { label: 'Empresas y Sedes', path: '/empresas',     icon: Building2,    color: '#60C8FF' },
-      { label: 'Trabajadores',     path: '/trabajadores', icon: Users,        color: '#93C5FD' },
-      { label: 'Cargos',           path: '/cargos',       icon: Briefcase,    color: '#67D3F0' },
+      { label: 'Empresas y Sedes', path: '/empresas',     icon: Building2,  color: '#60A5FA' },
+      { label: 'Trabajadores',     path: '/trabajadores', icon: UserCheck,  color: '#93C5FD' },
+      { label: 'Cargos',           path: '/cargos',       icon: Briefcase,  color: '#67E8F9' },
     ],
   },
   {
     label: 'EPP & Entregas',
+    sectionIcon: ShieldCheck,
+    sectionColor: '#10B981',
     items: [
-      { label: 'Matriz Técnica',    path: '/matriz-epp',     icon: ShieldCheck,   color: '#4ADE80' },
-      { label: 'Matriz por Cargos', path: '/matriz-cargos',  icon: Table2,        color: '#6EE7B7' },
-      { label: 'Inventario',        path: '/inventario',     icon: Package,       color: '#FCA5A5' },
-      { label: 'Nueva Entrega',     path: '/entregas/nueva', icon: PackagePlus,   color: '#F7941D' },
-      { label: 'Historial',         path: '/historial',      icon: ClipboardList, color: '#FCD34D' },
+      { label: 'Matriz Técnica',    path: '/matriz-epp',     icon: ShieldCheck, color: '#34D399' },
+      { label: 'Matriz por Cargos', path: '/matriz-cargos',  icon: LayoutGrid,  color: '#6EE7B7' },
+      { label: 'Inventario',        path: '/inventario',     icon: Boxes,       color: '#A7F3D0' },
+      { label: 'Nueva Entrega',     path: '/entregas/nueva', icon: PackagePlus, color: '#F97316' },
+      { label: 'Historial',         path: '/historial',      icon: History,     color: '#FCD34D' },
     ],
   },
   {
     label: 'Monitoreo',
+    sectionIcon: BarChart3,
+    sectionColor: '#F59E0B',
     items: [
       { label: 'Reportes',        path: '/reportes',    icon: BarChart3,     color: '#C084FC' },
-      { label: 'Consolidado EPP', path: '/consolidado', icon: PackageSearch, color: '#FBBF24' },
-      { label: 'Alertas',         path: '/alertas',     icon: Bell,          color: '#FB923C', badgeKey: 'alertas' },
+      { label: 'Consolidado EPP', path: '/consolidado', icon: FileBarChart2, color: '#FCD34D' },
+      { label: 'Alertas',         path: '/alertas',     icon: BellRing,      color: '#FB923C', badgeKey: 'alertas' },
     ],
   },
   {
     label: 'Seguridad Vial',
+    sectionIcon: Car,
+    sectionColor: '#06B6D4',
     items: [
-      { label: 'Checklist Preop.',  path: '/checklist',    icon: CheckSquare,    color: '#34D399' },
-      { label: 'Inspecciones SST',  path: '/inspecciones', icon: ClipboardCheck, color: '#38BDF8' },
+      { label: 'Checklist Preop.',  path: '/checklist',    icon: ListChecks, color: '#34D399' },
+      { label: 'Inspecciones SST',  path: '/inspecciones', icon: Activity,   color: '#38BDF8' },
     ],
   },
   {
     label: 'SG-SST',
+    sectionIcon: BadgeCheck,
+    sectionColor: '#8B5CF6',
     items: [
-      { label: 'Plan Anual',          path: '/plan-trabajo',          icon: ClipboardCheck, color: '#818CF8' },
-      { label: 'AT / IT',             path: '/at-it',                 icon: AlertOctagon,   color: '#F87171' },
-      { label: 'Actos Inseguros',     path: '/condiciones-inseguras', icon: ShieldAlert,    color: '#FB923C' },
-      { label: 'Exámenes Médicos',    path: '/examenes-medicos',      icon: Stethoscope,    color: '#2DD4BF' },
-      { label: 'Indicadores',         path: '/indicadores',           icon: BarChart2,      color: '#60A5FA' },
-      { label: 'SG-SST 0312',         path: '/sg-sst',                icon: ShieldCheck,    color: '#4ADE80' },
+      { label: 'Plan Anual',        path: '/plan-trabajo',          icon: CalendarCheck, color: '#818CF8' },
+      { label: 'AT / IT',           path: '/at-it',                 icon: HeartPulse,    color: '#F87171' },
+      { label: 'Actos Inseguros',   path: '/condiciones-inseguras', icon: AlertTriangle, color: '#FB923C' },
+      { label: 'Exámenes Médicos',  path: '/examenes-medicos',      icon: Stethoscope,   color: '#2DD4BF' },
+      { label: 'Indicadores',       path: '/indicadores',           icon: TrendingUp,    color: '#60A5FA' },
+      { label: 'SG-SST 0312',       path: '/sg-sst',                icon: BadgeCheck,    color: '#4ADE80' },
     ],
   },
   {
     label: 'Sistema',
+    sectionIcon: Settings2,
+    sectionColor: '#64748B',
     items: [
-      { label: 'Gestión del Cambio', path: '/gestion-cambio', icon: GitBranch,  color: '#94A3B8' },
-      { label: 'Auditoría',          path: '/auditoria',      icon: FileSearch, color: '#CBD5E1', adminOnly: true },
-      { label: 'Usuarios y Roles',   path: '/usuarios-roles', icon: UserCog,    color: '#A78BFA', adminOnly: true },
-      { label: 'Configuración',      path: '/configuracion',  icon: Settings,   color: '#64748B', adminOnly: true },
+      { label: 'Gestión del Cambio', path: '/gestion-cambio', icon: GitMerge,          color: '#94A3B8' },
+      { label: 'Auditoría',          path: '/auditoria',      icon: FileSearch,        color: '#CBD5E1', adminOnly: true },
+      { label: 'Usuarios y Roles',   path: '/usuarios-roles', icon: UserCog,           color: '#A78BFA', adminOnly: true },
+      { label: 'Configuración',      path: '/configuracion',  icon: SlidersHorizontal, color: '#94A3B8', adminOnly: true },
     ],
   },
 ]
 
-// ─── Logo ─────────────────────────────────────────────────────────────────────
+// ─── Logo corporativo ─────────────────────────────────────────────────────────
 function GeppiLogo({ collapsed }) {
-  const size = collapsed ? 44 : 56
+  const size = collapsed ? 40 : 52
   return (
     <motion.div
       style={{ position: 'relative', flexShrink: 0, width: size, height: size }}
-      whileHover={{ scale: 1.05 }}
+      whileHover={{ scale: 1.04 }}
       transition={{ type: 'spring', stiffness: 340, damping: 24 }}
     >
       <motion.div
-        animate={{ opacity: [0.5, 1, 0.5], scale: [1, 1.08, 1] }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        animate={{ opacity: [0.4, 0.9, 0.4], scale: [1, 1.1, 1] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
         style={{
-          position: 'absolute', inset: -5, borderRadius: 18,
-          background: 'radial-gradient(circle, rgba(27,98,204,0.45), transparent 70%)',
+          position: 'absolute', inset: -6, borderRadius: 20,
+          background: 'radial-gradient(circle, rgba(27,98,204,0.50), transparent 70%)',
         }}
       />
       <div style={{
         width: size, height: size, borderRadius: 14, background: 'white',
-        boxShadow: '0 4px 20px rgba(27,98,204,0.55), 0 2px 6px rgba(0,0,0,0.35)',
+        boxShadow: '0 4px 24px rgba(27,98,204,0.60), 0 1px 4px rgba(0,0,0,0.25)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: collapsed ? 5 : 7, position: 'relative', zIndex: 2,
       }}>
@@ -117,122 +123,137 @@ function GeppiLogo({ collapsed }) {
   )
 }
 
-// ─── NavItem ──────────────────────────────────────────────────────────────────
+// ─── Ítem de navegación ───────────────────────────────────────────────────────
 function NavItem({ item, onClose, collapsed, badges = {} }) {
-  const location = useLocation()
-  const isActive = item.path === '/dashboard'
+  const location  = useLocation()
+  const isActive  = item.path === '/dashboard'
     ? location.pathname === '/dashboard'
     : location.pathname.startsWith(item.path)
-  const Icon      = item.icon
-  const badge     = item.badgeKey ? badges[item.badgeKey] : 0
-  const hasAlert  = item.badgeKey === 'alertas' && badge > 0
+  const Icon     = item.icon
+  const badge    = item.badgeKey ? badges[item.badgeKey] : 0
+  const hasAlert = item.badgeKey === 'alertas' && badge > 0
 
-  const shakeAnim  = hasAlert ? { rotate: [0, -12, 12, -10, 10, -6, 6, 0] } : {}
-  const shakeTrans = hasAlert ? { duration: 0.6, repeat: Infinity, repeatDelay: 2.5 } : {}
+  const shakeAnim  = hasAlert ? { rotate: [0, -12, 12, -8, 8, -4, 4, 0] } : {}
+  const shakeTrans = hasAlert ? { duration: 0.55, repeat: Infinity, repeatDelay: 2.8 } : {}
 
+  // ── Modo colapsado (solo iconos) ─────────────────────────────────────────
   if (collapsed) {
     return (
       <NavLink to={item.path} onClick={onClose}
-        data-tooltip={item.label} className="sidebar-tooltip flex items-center justify-center py-1 w-full">
-        <motion.div
-          whileHover={{ scale: 1.14, backgroundColor: 'rgba(255,255,255,0.12)' }}
-          whileTap={{ scale: 0.93 }}
-          style={{
-            width: 42, height: 42, borderRadius: 12, position: 'relative',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: hasAlert ? 'rgba(239,68,68,0.18)' : isActive ? 'linear-gradient(135deg,rgba(27,98,204,0.55),rgba(8,50,120,0.35))' : 'transparent',
-            border: hasAlert ? '1px solid rgba(239,68,68,0.40)' : isActive ? '1px solid rgba(74,158,255,0.30)' : '1px solid transparent',
-            transition: 'all 0.2s',
-          }}
-        >
-          <motion.div animate={shakeAnim} transition={shakeTrans}>
-            <Icon size={17} strokeWidth={isActive || hasAlert ? 2.2 : 1.7}
-              style={{ color: hasAlert ? '#EF4444' : isActive ? item.color : 'rgba(255,255,255,0.45)' }} />
+        data-tooltip={item.label}
+        className="sidebar-tooltip flex items-center justify-center py-0.5 w-full"
+      >
+        {({ isActive: na }) => (
+          <motion.div
+            whileHover={{ scale: 1.12 }}
+            whileTap={{ scale: 0.90 }}
+            style={{
+              width: 40, height: 40, borderRadius: 11, position: 'relative',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: hasAlert
+                ? 'rgba(239,68,68,0.20)'
+                : isActive ? `${item.color}25` : 'transparent',
+              border: `1.5px solid ${hasAlert ? 'rgba(239,68,68,0.45)' : isActive ? item.color + '55' : 'transparent'}`,
+              transition: 'all 0.18s',
+            }}
+          >
+            <motion.div animate={shakeAnim} transition={shakeTrans}>
+              <Icon size={17} strokeWidth={isActive || hasAlert ? 2.3 : 1.8}
+                style={{ color: hasAlert ? '#EF4444' : isActive ? item.color : 'rgba(255,255,255,0.42)' }} />
+            </motion.div>
+            {badge > 0 && (
+              <span style={{
+                position: 'absolute', top: 3, right: 3,
+                minWidth: 15, height: 15, borderRadius: 8, padding: '0 3px',
+                background: '#EF4444', color: '#fff',
+                fontSize: 8, fontWeight: 900, lineHeight: '15px', textAlign: 'center',
+              }}>{badge > 99 ? '99+' : badge}</span>
+            )}
           </motion.div>
-          {badge > 0 && (
-            <span style={{
-              position: 'absolute', top: 4, right: 4,
-              minWidth: 16, height: 16, borderRadius: 8, padding: '0 4px',
-              background: '#EF4444', color: '#fff', fontSize: 9, fontWeight: 800,
-              lineHeight: '16px', textAlign: 'center',
-            }}>{badge > 99 ? '99+' : badge}</span>
-          )}
-        </motion.div>
+        )}
       </NavLink>
     )
   }
 
+  // ── Modo expandido ───────────────────────────────────────────────────────
   return (
     <NavLink to={item.path} onClick={onClose} style={{ textDecoration: 'none', display: 'block' }}>
       {() => (
         <motion.div
-          whileHover={!isActive ? { backgroundColor: hasAlert ? 'rgba(239,68,68,0.10)' : 'rgba(255,255,255,0.06)', x: 2 } : {}}
+          whileHover={!isActive ? { x: 3, backgroundColor: hasAlert ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.055)' } : {}}
           whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: 0.12 }}
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            padding: '7px 8px', borderRadius: 10, position: 'relative',
+            padding: '6px 8px', borderRadius: 10, position: 'relative', cursor: 'pointer',
             background: hasAlert
-              ? 'linear-gradient(90deg,rgba(239,68,68,0.18) 0%,rgba(220,38,38,0.08) 100%)'
-              : isActive ? 'linear-gradient(90deg,rgba(27,98,204,0.28) 0%,rgba(8,50,120,0.12) 100%)'
+              ? 'linear-gradient(90deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05))'
+              : isActive
+              ? `linear-gradient(90deg,${item.color}22,${item.color}08)`
               : 'transparent',
-            border: hasAlert ? '1px solid rgba(239,68,68,0.30)' : isActive ? '1px solid rgba(74,158,255,0.22)' : '1px solid transparent',
-            cursor: 'pointer',
+            border: `1px solid ${hasAlert ? 'rgba(239,68,68,0.25)' : isActive ? item.color + '35' : 'transparent'}`,
           }}
         >
+          {/* Barra izquierda activa */}
           {isActive && !hasAlert && (
-            <motion.div layoutId="activeBar" style={{
-              position: 'absolute', left: 0, top: 6, bottom: 6,
+            <motion.div layoutId="nav-active-bar" style={{
+              position: 'absolute', left: 0, top: '20%', bottom: '20%',
               width: 3, borderRadius: 99,
-              background: `linear-gradient(to bottom,${item.color},rgba(27,98,204,0.5))`,
-              boxShadow: `0 0 8px ${item.color}88`,
+              background: `linear-gradient(to bottom, ${item.color}, ${item.color}80)`,
+              boxShadow: `0 0 10px ${item.color}99`,
             }} />
           )}
           {hasAlert && (
-            <motion.div
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1.2, repeat: Infinity }}
+            <motion.div animate={{ opacity: [1, 0.25, 1] }} transition={{ duration: 1.1, repeat: Infinity }}
               style={{
-                position: 'absolute', left: 0, top: 6, bottom: 6,
+                position: 'absolute', left: 0, top: '20%', bottom: '20%',
                 width: 3, borderRadius: 99,
                 background: 'linear-gradient(to bottom,#EF4444,#DC2626)',
-                boxShadow: '0 0 8px #EF444488',
-              }}
-            />
+                boxShadow: '0 0 10px #EF444480',
+              }} />
           )}
 
+          {/* Contenedor del icono */}
           <div style={{
-            width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+            width: 30, height: 30, borderRadius: 9, flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: hasAlert ? 'rgba(239,68,68,0.18)' : isActive ? `${item.color}22` : 'rgba(255,255,255,0.05)',
+            background: hasAlert
+              ? 'rgba(239,68,68,0.18)'
+              : isActive ? `${item.color}30` : `${item.color}12`,
+            border: `1px solid ${isActive ? item.color + '40' : 'transparent'}`,
+            transition: 'all 0.18s',
           }}>
             <motion.div animate={shakeAnim} transition={shakeTrans}>
-              <Icon size={14} strokeWidth={isActive || hasAlert ? 2.2 : 1.7}
-                style={{ color: hasAlert ? '#EF4444' : isActive ? item.color : 'rgba(255,255,255,0.40)' }} />
+              <Icon size={15} strokeWidth={isActive || hasAlert ? 2.3 : 1.9}
+                style={{ color: hasAlert ? '#EF4444' : isActive ? item.color : `${item.color}BB` }} />
             </motion.div>
           </div>
 
+          {/* Label */}
           <span style={{
-            fontSize: 12.5, fontWeight: isActive || hasAlert ? 600 : 400, flex: 1,
-            color: hasAlert ? '#FCA5A5' : isActive ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.60)',
-            letterSpacing: '0.01em',
+            fontSize: 12.5, flex: 1,
+            fontWeight: isActive ? 700 : hasAlert ? 600 : 400,
+            color: hasAlert ? '#FCA5A5'
+              : isActive ? 'rgba(255,255,255,0.96)'
+              : 'rgba(255,255,255,0.58)',
+            letterSpacing: '0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {item.label}
           </span>
 
+          {/* Badge alertas */}
           {badge > 0 && (
             <span style={{
-              minWidth: 18, height: 18, borderRadius: 9, padding: '0 5px',
-              background: '#EF4444', color: '#fff', fontSize: 10,
-              fontWeight: 800, lineHeight: '18px', textAlign: 'center', flexShrink: 0,
+              minWidth: 19, height: 19, borderRadius: 10, padding: '0 5px',
+              background: '#EF4444', color: '#fff',
+              fontSize: 10, fontWeight: 900, lineHeight: '19px', textAlign: 'center', flexShrink: 0,
             }}>{badge > 99 ? '99+' : badge}</span>
           )}
 
+          {/* Punto activo */}
           {isActive && !hasAlert && (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} style={{
-              width: 5, height: 5, borderRadius: '50%',
-              background: item.color, boxShadow: `0 0 6px ${item.color}`, flexShrink: 0,
-            }} />
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+              style={{ width: 5, height: 5, borderRadius: '50%', background: item.color, boxShadow: `0 0 7px ${item.color}`, flexShrink: 0 }} />
           )}
         </motion.div>
       )}
@@ -241,43 +262,67 @@ function NavItem({ item, onClose, collapsed, badges = {} }) {
 }
 
 // ─── Encabezado de sección colapsable ─────────────────────────────────────────
-function SectionHeader({ label, open, onToggle }) {
+function SectionHeader({ label, sectionIcon: Icon, sectionColor, count, open, onToggle, hasActive }) {
   return (
-    <button
+    <motion.button
       onClick={onToggle}
+      whileHover={{ backgroundColor: hasActive ? `${sectionColor}18` : 'rgba(255,255,255,0.06)' }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.12 }}
       style={{
-        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '3px 4px 3px 6px', borderRadius: 6, cursor: 'pointer',
-        background: 'none', border: 'none',
-        transition: 'background 0.15s',
+        width: '100%', display: 'flex', alignItems: 'center', gap: 9,
+        padding: '7px 8px', borderRadius: 11, cursor: 'pointer',
+        background: hasActive ? `${sectionColor}12` : open ? 'rgba(255,255,255,0.04)' : 'transparent',
+        border: `1px solid ${hasActive ? sectionColor + '30' : 'transparent'}`,
+        transition: 'all 0.18s',
       }}
-      onMouseOver={e  => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
-      onMouseOut={e   => e.currentTarget.style.background = 'none'}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
-        <span style={{
-          fontSize: 9, fontWeight: 700, letterSpacing: '0.14em',
-          color: 'rgba(255,255,255,0.38)', textTransform: 'uppercase', flexShrink: 0,
-        }}>
-          {label}
-        </span>
-        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+      {/* Icono de sección */}
+      <div style={{
+        width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: `${sectionColor}22`,
+        border: `1px solid ${sectionColor}30`,
+      }}>
+        <Icon size={13} strokeWidth={2.2} style={{ color: sectionColor }} />
       </div>
+
+      {/* Label */}
+      <span style={{
+        flex: 1, textAlign: 'left',
+        fontSize: 11.5, fontWeight: 700,
+        color: hasActive ? sectionColor : 'rgba(255,255,255,0.55)',
+        letterSpacing: '0.02em',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}>
+        {label}
+      </span>
+
+      {/* Contador */}
+      <span style={{
+        fontSize: 9.5, padding: '1px 6px', borderRadius: 99, flexShrink: 0,
+        background: hasActive ? `${sectionColor}25` : 'rgba(255,255,255,0.08)',
+        color: hasActive ? sectionColor : 'rgba(255,255,255,0.35)',
+        fontWeight: 700, border: `1px solid ${hasActive ? sectionColor + '30' : 'transparent'}`,
+      }}>
+        {count}
+      </span>
+
+      {/* Chevron */}
       <motion.div
         animate={{ rotate: open ? 0 : -90 }}
-        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-        style={{ flexShrink: 0, marginLeft: 6 }}
+        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+        style={{ flexShrink: 0 }}
       >
-        <ChevronDown size={10} style={{ color: 'rgba(255,255,255,0.30)', display: 'block' }} />
+        <ChevronDown size={13} style={{ color: hasActive ? sectionColor : 'rgba(255,255,255,0.28)', display: 'block' }} />
       </motion.div>
-    </button>
+    </motion.button>
   )
 }
 
 // ─── Usuario actual ───────────────────────────────────────────────────────────
 const ROL_COLOR = { ADMINISTRADOR: '#A78BFA', COLABORADOR: '#60A5FA', SST: '#4ADE80' }
-function iniciales(n) { return (n||'?').split(' ').slice(0,2).map(p=>p[0]||'').join('').toUpperCase() }
+function iniciales(n) { return (n || '?').split(' ').slice(0, 2).map(p => p[0] || '').join('').toUpperCase() }
 
 function UsuarioActual({ collapsed }) {
   const { user } = useUser()
@@ -285,17 +330,17 @@ function UsuarioActual({ collapsed }) {
   return (
     <div style={{ padding: collapsed ? '6px 6px 2px' : '6px 10px 2px' }}>
       <div style={{
-        width: '100%', display: 'flex', alignItems: 'center',
+        display: 'flex', alignItems: 'center',
         justifyContent: collapsed ? 'center' : 'flex-start',
-        gap: 10, padding: collapsed ? '8px 0' : '8px 12px',
-        borderRadius: 11, border: '1px solid rgba(255,255,255,0.08)',
-        background: 'rgba(255,255,255,0.04)',
+        gap: 10, padding: collapsed ? '8px 0' : '8px 10px',
+        borderRadius: 11, border: '1px solid rgba(255,255,255,0.07)',
+        background: 'rgba(255,255,255,0.035)',
       }}>
         <div style={{
-          width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+          width: 30, height: 30, borderRadius: 9, flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `${color}22`, border: `1.5px solid ${color}44`,
-          fontSize: 11, fontWeight: 800, color,
+          background: `${color}25`, border: `1.5px solid ${color}50`,
+          fontSize: 11, fontWeight: 900, color,
         }}>
           {iniciales(user?.nombre)}
         </div>
@@ -303,10 +348,10 @@ function UsuarioActual({ collapsed }) {
           {!collapsed && (
             <motion.div initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
               style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.80)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.82)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user?.nombre || 'Usuario'}
               </p>
-              <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap' }}>
+              <p style={{ margin: 0, fontSize: 10, color, whiteSpace: 'nowrap', fontWeight: 600, opacity: 0.75 }}>
                 {user?.rol || ''}
               </p>
             </motion.div>
@@ -317,15 +362,14 @@ function UsuarioActual({ collapsed }) {
   )
 }
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
+// ─── Sidebar principal ────────────────────────────────────────────────────────
 export default function Sidebar({ open, onClose, collapsed, onToggle }) {
   const { user, logout } = useUser()
   const navigate         = useNavigate()
   const location         = useLocation()
   const isAdmin          = user?.rol === 'ADMINISTRADOR'
-  const [alertCount,    setAlertCount]    = useState(0)
+  const [alertCount, setAlertCount] = useState(0)
 
-  // Estado de secciones abiertas — por defecto todas abiertas
   const [openSections, setOpenSections] = useState(() => {
     try {
       const saved = localStorage.getItem('geppi-nav-sections')
@@ -333,13 +377,11 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
     } catch { return {} }
   })
 
-  // Auto-expandir la sección activa cuando cambia la ruta
+  // Auto-expande la sección activa al navegar
   useEffect(() => {
     const active = NAV_SECTIONS.find(s =>
       s.label && s.items.some(item =>
-        item.path === '/dashboard'
-          ? location.pathname === '/dashboard'
-          : location.pathname.startsWith(item.path)
+        item.path === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(item.path)
       )
     )
     if (active?.label) {
@@ -351,23 +393,19 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
     }
   }, [location.pathname])
 
-  // Conteo de alertas cada 30s
   useEffect(() => {
     let cancelled = false
     async function contar() {
-      try {
-        const n = await alertaDB.contarNoLeidas()
-        if (!cancelled) setAlertCount(n)
-      } catch { /* silencioso */ }
+      try { const n = await alertaDB.contarNoLeidas(); if (!cancelled) setAlertCount(n) }
+      catch { /* silencioso */ }
     }
     contar()
     const iv = setInterval(contar, 30000)
     return () => { cancelled = true; clearInterval(iv) }
   }, [])
 
-  const badges = { alertas: alertCount }
-
-  const isSectionOpen = (label) => openSections[label] === true   // cerrada por defecto
+  const badges      = { alertas: alertCount }
+  const isSectionOpen = (label) => openSections[label] === true
 
   const toggleSection = (label) => {
     setOpenSections(prev => {
@@ -377,6 +415,11 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
     })
   }
 
+  const hasSectionActive = (section) =>
+    section.items.some(item =>
+      item.path === '/dashboard' ? location.pathname === '/dashboard' : location.pathname.startsWith(item.path)
+    )
+
   return (
     <>
       <AnimatePresence>
@@ -384,7 +427,7 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
           <motion.div key="backdrop"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-20 lg:hidden"
-            style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
+            style={{ background: 'rgba(0,0,0,0.60)', backdropFilter: 'blur(3px)' }}
             onClick={onClose}
           />
         )}
@@ -398,35 +441,35 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         ].join(' ')}
         style={{
-          width: collapsed ? 68 : 252,
+          width: collapsed ? 66 : 256,
           transition: 'width 0.28s cubic-bezier(0.4,0,0.2,1), transform 0.3s ease-in-out',
           background: 'var(--theme-sidebar-bg)',
           overflow: 'visible',
           borderRight: '1px solid rgba(255,255,255,0.05)',
         }}
       >
-        {/* Decoración */}
-        <div style={{ position: 'absolute', top: -80, left: -40, width: 200, height: 200, borderRadius: '50%', pointerEvents: 'none', zIndex: 0, background: 'radial-gradient(circle,rgba(27,98,204,0.18),transparent 70%)' }} />
-        <div style={{ position: 'absolute', bottom: 0, right: 0, width: 160, height: 160, borderRadius: '50%', pointerEvents: 'none', zIndex: 0, background: 'radial-gradient(circle,rgba(57,181,74,0.08),transparent 70%)' }} />
+        {/* Decos de fondo */}
+        <div style={{ position: 'absolute', top: -60, left: -40, width: 180, height: 180, borderRadius: '50%', pointerEvents: 'none', zIndex: 0, background: 'radial-gradient(circle,rgba(27,98,204,0.16),transparent 70%)' }} />
+        <div style={{ position: 'absolute', bottom: 60, right: -20, width: 140, height: 140, borderRadius: '50%', pointerEvents: 'none', zIndex: 0, background: 'radial-gradient(circle,rgba(57,181,74,0.08),transparent 70%)' }} />
 
         {/* Toggle desktop */}
-        <motion.button onClick={onToggle} whileHover={{ scale: 1.18 }} whileTap={{ scale: 0.88 }}
-          className="absolute z-50 hidden lg:flex items-center justify-center shadow-lg"
+        <motion.button onClick={onToggle} whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.88 }}
+          className="absolute z-50 hidden lg:flex items-center justify-center"
           style={{
-            top: 28, right: -11, width: 22, height: 22, borderRadius: '50%',
+            top: 30, right: -12, width: 24, height: 24, borderRadius: '50%',
             background: 'linear-gradient(135deg,#1b62cc,#083278)',
-            boxShadow: '0 2px 10px rgba(27,98,204,0.6)',
-            border: '1.5px solid rgba(255,255,255,0.15)',
+            boxShadow: '0 2px 12px rgba(27,98,204,0.65)',
+            border: '1.5px solid rgba(255,255,255,0.18)',
           }}>
-          <motion.div animate={{ rotate: collapsed ? 180 : 0 }} transition={{ duration: 0.3 }}>
-            <ChevronLeft size={12} color="white" />
+          <motion.div animate={{ rotate: collapsed ? 180 : 0 }} transition={{ duration: 0.28 }}>
+            <ChevronLeft size={13} color="white" />
           </motion.div>
         </motion.button>
 
-        {/* Logo */}
+        {/* ── Logo ─────────────────────────────────────────────────────────── */}
         <div style={{
           position: 'relative', zIndex: 10,
-          padding: collapsed ? '20px 0 18px' : '18px 16px 16px',
+          padding: collapsed ? '18px 0 16px' : '16px 14px 14px',
           display: 'flex', alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'space-between',
           borderBottom: '1px solid rgba(255,255,255,0.06)',
@@ -435,19 +478,18 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
             <GeppiLogo collapsed={collapsed} />
             <AnimatePresence>
               {!collapsed && (
-                <motion.div key="text"
+                <motion.div key="brand"
                   initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}
-                  transition={{ duration: 0.25 }} style={{ minWidth: 0, overflow: 'hidden' }}
+                  transition={{ duration: 0.22 }} style={{ minWidth: 0, overflow: 'hidden' }}
                 >
                   <p style={{
-                    margin: 0, fontSize: 16, fontWeight: 900, letterSpacing: '0.14em', lineHeight: 1,
+                    margin: 0, fontSize: 17, fontWeight: 900, letterSpacing: '0.13em', lineHeight: 1,
                     background: 'linear-gradient(90deg,#39B54A,#1b62cc,#F7941D)',
                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
                   }}>{SISTEMA.NOMBRE}</p>
-                  <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
-                    transition={{ delay: 0.1, duration: 0.35 }}
-                    style={{ height: 2, marginTop: 6, background: 'linear-gradient(90deg,#39B54A,#1b62cc,#F7941D)', borderRadius: 99, transformOrigin: 'left' }} />
-                  <p style={{ margin: '5px 0 0', fontSize: 9, fontWeight: 500, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.38)' }}>
+                  <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.1, duration: 0.35 }}
+                    style={{ height: 2, marginTop: 5, background: 'linear-gradient(90deg,#39B54A,#1b62cc,#F7941D)', borderRadius: 99, transformOrigin: 'left' }} />
+                  <p style={{ margin: '4px 0 0', fontSize: 9, fontWeight: 600, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.32)' }}>
                     Gestión de EPP · SST
                   </p>
                 </motion.div>
@@ -456,54 +498,67 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
           </div>
           {!collapsed && (
             <button onClick={onClose} className="lg:hidden"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: 'rgba(255,255,255,0.40)', borderRadius: 8, display: 'flex' }}>
-              <X size={16} />
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, color: 'rgba(255,255,255,0.38)', borderRadius: 8, display: 'flex' }}>
+              <X size={15} />
             </button>
           )}
         </div>
 
-        {/* Navegación */}
-        <nav style={{ flex: 1, overflowY: 'auto', position: 'relative', zIndex: 10, padding: collapsed ? '10px 6px' : '8px 10px' }}
-          className="scrollbar-dark">
+        {/* ── Navegación ───────────────────────────────────────────────────── */}
+        <nav className="scrollbar-dark"
+          style={{ flex: 1, overflowY: 'auto', position: 'relative', zIndex: 10, padding: collapsed ? '10px 6px' : '10px 8px' }}>
 
           {NAV_SECTIONS.map((section) => {
             const itemsFiltrados = section.items.filter(item => !item.adminOnly || isAdmin)
             if (itemsFiltrados.length === 0) return null
-            const isOpen = !section.label || isSectionOpen(section.label)
+            const isOpen    = !section.label || isSectionOpen(section.label)
+            const hasActive = !!section.label && hasSectionActive(section)
 
             return (
-              <div key={section.label || 'root'} style={{ marginBottom: collapsed ? 4 : 0 }}>
+              <div key={section.label || 'root'} style={{ marginBottom: collapsed ? 2 : 4 }}>
 
-                {/* Encabezado de sección (solo en modo expandido y si tiene label) */}
+                {/* Encabezado de sección en modo expandido */}
                 {!collapsed && section.label && (
-                  <div style={{ margin: '10px 0 4px' }}>
+                  <div style={{ marginBottom: 4 }}>
                     <SectionHeader
                       label={section.label}
+                      sectionIcon={section.sectionIcon}
+                      sectionColor={section.sectionColor}
+                      count={itemsFiltrados.length}
                       open={isOpen}
                       onToggle={() => toggleSection(section.label)}
+                      hasActive={hasActive}
                     />
                   </div>
                 )}
 
                 {/* Separador en modo collapsed */}
                 {collapsed && section.label && (
-                  <div style={{ height: 1, margin: '6px 6px', background: 'rgba(255,255,255,0.06)' }} />
+                  <div style={{ height: 1, margin: '5px 8px', background: 'rgba(255,255,255,0.07)' }} />
                 )}
 
-                {/* Ítems — animados cuando colapsamos la sección */}
+                {/* Ítems con animación de acordeón */}
                 <AnimatePresence initial={false}>
                   {(collapsed || isOpen) && (
                     <motion.ul
                       initial={!collapsed ? { height: 0, opacity: 0 } : false}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                      style={{ overflow: 'hidden', listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 1 }}
+                      transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
+                      style={{
+                        overflow: 'hidden', listStyle: 'none', margin: 0,
+                        padding: collapsed ? 0 : '0 0 4px 0',
+                        display: 'flex', flexDirection: 'column', gap: 1,
+                      }}
                     >
                       {itemsFiltrados.map(item => (
-                        <li key={item.path}>
+                        <motion.li key={item.path}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
                           <NavItem item={item} onClose={onClose} collapsed={collapsed} badges={badges} />
-                        </li>
+                        </motion.li>
                       ))}
                     </motion.ul>
                   )}
@@ -514,21 +569,19 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
           })}
         </nav>
 
-        {/* Footer */}
+        {/* ── Footer ───────────────────────────────────────────────────────── */}
         <div style={{ position: 'relative', zIndex: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           <AnimatePresence>
             {!collapsed && (
               <motion.div key="footer-info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                style={{ padding: '10px 16px 8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                  <motion.div animate={{ scale: [1, 1.5, 1], opacity: [1, 0.5, 1] }}
-                    transition={{ duration: 2.2, repeat: Infinity }}
+                style={{ padding: '10px 14px 6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                  <motion.div animate={{ scale: [1, 1.6, 1], opacity: [1, 0.4, 1] }} transition={{ duration: 2.4, repeat: Infinity }}
                     style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80', flexShrink: 0 }} />
-                  <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(74,222,128,0.75)', letterSpacing: '0.05em' }}>Sistema activo</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(74,222,128,0.70)', letterSpacing: '0.05em' }}>Sistema activo</span>
                 </div>
-                <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.28)' }}>
-                  <span style={{ color: 'rgba(147,197,253,0.65)' }}>{SISTEMA.CODIGO_DOCUMENTO}</span>
-                  {' '}· v{SISTEMA.VERSION_MATRIZ}
+                <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
+                  <span style={{ color: 'rgba(147,197,253,0.55)' }}>{SISTEMA.CODIGO_DOCUMENTO}</span> · v{SISTEMA.VERSION_MATRIZ}
                 </p>
               </motion.div>
             )}
@@ -536,28 +589,29 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
 
           <UsuarioActual collapsed={collapsed} />
 
-          <div style={{ padding: collapsed ? '4px 6px 12px' : '4px 10px 12px' }}>
+          {/* Cerrar sesión */}
+          <div style={{ padding: collapsed ? '4px 6px 12px' : '4px 8px 12px' }}>
             <motion.button onClick={() => logout(navigate)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center',
                 justifyContent: collapsed ? 'center' : 'flex-start',
-                gap: 10, padding: collapsed ? '10px 0' : '9px 12px',
-                borderRadius: 11, border: '1px solid rgba(248,113,113,0.20)',
-                background: 'rgba(220,38,38,0.08)', cursor: 'pointer', transition: 'all 0.2s',
+                gap: 10, padding: collapsed ? '10px 0' : '8px 10px',
+                borderRadius: 11, border: '1px solid rgba(248,113,113,0.18)',
+                background: 'rgba(220,38,38,0.07)', cursor: 'pointer', transition: 'all 0.18s',
               }}
-              onMouseOver={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.18)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.40)' }}
-              onMouseOut={e  => { e.currentTarget.style.background = 'rgba(220,38,38,0.08)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.20)' }}
+              onMouseOver={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.16)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.35)' }}
+              onMouseOut={e  => { e.currentTarget.style.background = 'rgba(220,38,38,0.07)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.18)' }}
               title="Cerrar sesión"
               data-tooltip={collapsed ? 'Cerrar sesión' : undefined}
               className={collapsed ? 'sidebar-tooltip' : ''}
             >
-              <div style={{ width: 28, height: 28, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(220,38,38,0.15)' }}>
-                <LogOut size={14} style={{ color: '#FCA5A5' }} strokeWidth={2} />
+              <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(220,38,38,0.14)' }}>
+                <LogOut size={14} style={{ color: '#FCA5A5' }} strokeWidth={2.2} />
               </div>
               <AnimatePresence>
                 {!collapsed && (
                   <motion.span initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-                    style={{ fontSize: 13, fontWeight: 500, color: '#FCA5A5', letterSpacing: '0.01em' }}>
+                    style={{ fontSize: 12.5, fontWeight: 600, color: '#FCA5A5', letterSpacing: '0.01em' }}>
                     Cerrar sesión
                   </motion.span>
                 )}
