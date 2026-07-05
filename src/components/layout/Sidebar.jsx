@@ -261,62 +261,43 @@ function NavItem({ item, onClose, collapsed, badges = {} }) {
   )
 }
 
-// ─── Encabezado de sección colapsable ─────────────────────────────────────────
-function SectionHeader({ label, sectionIcon: Icon, sectionColor, count, open, onToggle, hasActive }) {
+// ─── Encabezado de sección colapsable (Opción A: etiqueta plana tipo VS Code) ──
+function SectionHeader({ label, sectionColor, open, onToggle, hasActive }) {
   return (
-    <motion.button
+    <button
       onClick={onToggle}
-      whileHover={{ backgroundColor: hasActive ? `${sectionColor}18` : 'rgba(255,255,255,0.06)' }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.12 }}
       style={{
-        width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-        padding: '7px 8px', borderRadius: 11, cursor: 'pointer',
-        background: hasActive ? `${sectionColor}12` : open ? 'rgba(255,255,255,0.04)' : 'transparent',
-        border: `1px solid ${hasActive ? sectionColor + '30' : 'transparent'}`,
-        transition: 'all 0.18s',
+        width: '100%', display: 'flex', alignItems: 'center', gap: 7,
+        padding: '12px 4px 4px 6px', background: 'none', border: 'none', cursor: 'pointer',
       }}
     >
-      {/* Icono de sección */}
-      <div style={{
-        width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: `${sectionColor}22`,
-        border: `1px solid ${sectionColor}30`,
-      }}>
-        <Icon size={13} strokeWidth={2.2} style={{ color: sectionColor }} />
-      </div>
-
-      {/* Label */}
+      {/* Etiqueta uppercase muy pequeña */}
       <span style={{
-        flex: 1, textAlign: 'left',
-        fontSize: 11.5, fontWeight: 700,
-        color: hasActive ? sectionColor : 'rgba(255,255,255,0.55)',
-        letterSpacing: '0.02em',
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        fontSize: 9.5, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase',
+        color: hasActive ? sectionColor : 'rgba(255,255,255,0.28)',
+        whiteSpace: 'nowrap', flexShrink: 0,
+        transition: 'color 0.2s',
       }}>
         {label}
       </span>
 
-      {/* Contador */}
-      <span style={{
-        fontSize: 9.5, padding: '1px 6px', borderRadius: 99, flexShrink: 0,
-        background: hasActive ? `${sectionColor}25` : 'rgba(255,255,255,0.08)',
-        color: hasActive ? sectionColor : 'rgba(255,255,255,0.35)',
-        fontWeight: 700, border: `1px solid ${hasActive ? sectionColor + '30' : 'transparent'}`,
-      }}>
-        {count}
-      </span>
+      {/* Línea separadora */}
+      <div style={{
+        flex: 1, height: 1,
+        background: hasActive ? `${sectionColor}35` : 'rgba(255,255,255,0.07)',
+        transition: 'background 0.2s',
+      }} />
 
-      {/* Chevron */}
+      {/* Chevron mínimo */}
       <motion.div
         animate={{ rotate: open ? 0 : -90 }}
-        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-        style={{ flexShrink: 0 }}
+        transition={{ duration: 0.20, ease: [0.4, 0, 0.2, 1] }}
+        style={{ flexShrink: 0, display: 'flex' }}
       >
-        <ChevronDown size={13} style={{ color: hasActive ? sectionColor : 'rgba(255,255,255,0.28)', display: 'block' }} />
+        <ChevronDown size={11}
+          style={{ color: hasActive ? sectionColor : 'rgba(255,255,255,0.22)', display: 'block' }} />
       </motion.div>
-    </motion.button>
+    </button>
   )
 }
 
@@ -519,17 +500,13 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
 
                 {/* Encabezado de sección en modo expandido */}
                 {!collapsed && section.label && (
-                  <div style={{ marginBottom: 4 }}>
-                    <SectionHeader
-                      label={section.label}
-                      sectionIcon={section.sectionIcon}
-                      sectionColor={section.sectionColor}
-                      count={itemsFiltrados.length}
-                      open={isOpen}
-                      onToggle={() => toggleSection(section.label)}
-                      hasActive={hasActive}
-                    />
-                  </div>
+                  <SectionHeader
+                    label={section.label}
+                    sectionColor={section.sectionColor}
+                    open={isOpen}
+                    onToggle={() => toggleSection(section.label)}
+                    hasActive={hasActive}
+                  />
                 )}
 
                 {/* Separador en modo collapsed */}
@@ -547,7 +524,7 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
                       transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
                       style={{
                         overflow: 'hidden', listStyle: 'none', margin: 0,
-                        padding: collapsed ? 0 : '0 0 4px 0',
+                        padding: collapsed ? 0 : `0 0 6px ${section.label ? 8 : 0}px`,
                         display: 'flex', flexDirection: 'column', gap: 1,
                       }}
                     >
