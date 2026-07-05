@@ -20,6 +20,7 @@ export default function AnularModal({ entrega, onConfirmar, onClose, saving = fa
       open
       onClose={onClose}
       title="Anular entrega"
+      icon={AlertTriangle} color="#B91C1C"
       size="sm"
       footer={
         <>

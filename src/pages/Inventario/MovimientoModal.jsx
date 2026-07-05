@@ -1,6 +1,6 @@
 import { useEffect }        from 'react'
 import { useForm, useWatch } from 'react-hook-form'
-import { ArrowDownCircle, SlidersHorizontal } from 'lucide-react'
+import { ArrowDownCircle, SlidersHorizontal, PackagePlus } from 'lucide-react'
 import { Modal, FormField, Input, Select, Button } from '@/components/ui'
 import { TIPO_MOVIMIENTO }                         from '@/constants'
 
@@ -99,6 +99,7 @@ export default function MovimientoModal({
       open
       onClose={onClose}
       title={esNuevo ? 'Registrar entrada de inventario' : `Movimiento — ${eppNombre}`}
+      icon={PackagePlus} color="#D97706"
       size="md"
       footer={
         <>

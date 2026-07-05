@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useForm }             from 'react-hook-form'
+import { UserCheck }           from 'lucide-react'
 import { Modal, FormField, Input, Select, DateInput, Button } from '@/components/ui'
 import { validarCedula }       from '@/utils/validators'
 
@@ -68,6 +69,7 @@ export default function TrabajadorModal({
       title={isEdit
         ? `Editar: ${trabajador.nombres} ${trabajador.apellidos}`
         : 'Nuevo trabajador'}
+      icon={UserCheck} color="#1B62CC"
       size="lg"
       footer={
         <>

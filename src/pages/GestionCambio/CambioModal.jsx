@@ -1,4 +1,5 @@
-import { useForm }   from 'react-hook-form'
+import { useForm }    from 'react-hook-form'
+import { GitMerge }   from 'lucide-react'
 import { Modal, FormField, Input, Select, Button } from '@/components/ui'
 import { MODULO, SISTEMA }                         from '@/constants'
 
@@ -32,6 +33,7 @@ export default function CambioModal({ onSave, onClose, saving = false }) {
       open
       onClose={onClose}
       title="Registrar nueva versión"
+      icon={GitMerge} color="#475569"
       size="md"
       footer={
         <>
