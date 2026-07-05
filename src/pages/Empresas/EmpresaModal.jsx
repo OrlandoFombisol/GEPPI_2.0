@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useForm }             from 'react-hook-form'
+import { Building2 }           from 'lucide-react'
 import { Modal, FormField, Input, Select, Button } from '@/components/ui'
 import { DEPARTAMENTOS, CAPITALES } from '@/constants/colombia'
 import { SECTORES }                 from '@/constants'
@@ -38,6 +39,7 @@ export default function EmpresaModal({ empresa, onSave, onClose, saving = false 
       open
       onClose={onClose}
       title={isEdit ? `Editar: ${empresa.razonSocial}` : 'Nueva empresa'}
+      icon={Building2} color="#1B62CC"
       size="lg"
       footer={
         <>

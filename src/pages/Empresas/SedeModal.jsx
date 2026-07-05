@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useForm }             from 'react-hook-form'
+import { MapPin }              from 'lucide-react'
 import { Modal, FormField, Input, Select, Button } from '@/components/ui'
 import { DEPARTAMENTOS, CAPITALES } from '@/constants/colombia'
 import { validarTelefono, validarEmail } from '@/utils/validators'
@@ -45,6 +46,7 @@ export default function SedeModal({ sede, empresas = [], onSave, onClose, saving
       open
       onClose={onClose}
       title={isEdit ? `Editar sede: ${sede.nombre}` : 'Nueva sede'}
+      icon={MapPin} color="#083278"
       size="lg"
       footer={
         <>

@@ -1,6 +1,6 @@
 import { useState }       from 'react'
 import { useForm }        from 'react-hook-form'
-import { Paperclip, X }  from 'lucide-react'
+import { Paperclip, X, ShieldCheck } from 'lucide-react'
 import { Modal, FormField, Input, Select, Button } from '@/components/ui'
 
 function Textarea({ error, rows = 3, ...props }) {
@@ -59,6 +59,7 @@ export default function EppModal({ epp, onSave, onClose, saving = false }) {
       open
       onClose={onClose}
       title={isEdit ? `Editar EPP #${epp.item}: ${epp.nombre}` : 'Nuevo EPP — Ficha técnica'}
+      icon={ShieldCheck} color="#059669"
       size="xl"
       footer={
         <>

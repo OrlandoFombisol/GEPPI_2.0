@@ -13,10 +13,12 @@ export default function Modal({
   open,
   onClose,
   title,
-  size             = 'md',
-  closeOnBackdrop  = true,
+  icon,
+  color,
+  size            = 'md',
+  closeOnBackdrop = true,
   footer,
-  className        = '',
+  className       = '',
   children,
 }) {
   const handleKeyDown = useCallback((e) => {
@@ -35,12 +37,12 @@ export default function Modal({
 
   if (!open) return null
 
+  const Icon = icon
+
   return createPortal(
     <div
       className={[
         'fixed inset-0 z-50 flex',
-        // Móvil: alineado al fondo (bottom sheet)
-        // Desktop: centrado
         'items-end sm:items-center',
         'justify-center',
         'p-0 sm:p-4',
@@ -48,7 +50,7 @@ export default function Modal({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/55 backdrop-blur-[3px]"
         onClick={closeOnBackdrop ? onClose : undefined}
         aria-hidden="true"
       />
@@ -61,14 +63,11 @@ export default function Modal({
         className={[
           'relative z-10 w-full flex flex-col',
           'bg-white shadow-2xl',
-          // Móvil: bottom sheet con esquinas redondeadas arriba
           'rounded-t-2xl rounded-b-none',
           'max-h-[92vh]',
-          // Desktop: modal normal centrado
           'sm:rounded-2xl',
           'sm:max-h-[90vh]',
           SIZES[size] || SIZES.md,
-          // Animación: slide-up en móvil
           'animate-slide-up',
           className,
         ].join(' ')}
@@ -80,7 +79,49 @@ export default function Modal({
         </div>
 
         {/* Header */}
-        {title && (
+        {title && (color ? (
+          // ── Header con color de módulo ────────────────────────────────────
+          <div style={{
+            padding: '13px 16px',
+            background: `linear-gradient(135deg, ${color} 0%, ${color}cc 100%)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexShrink: 0, borderRadius: '16px 16px 0 0',
+            boxShadow: `0 2px 12px ${color}44`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, minWidth: 0 }}>
+              {Icon && (
+                <div style={{
+                  width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                  background: 'rgba(255,255,255,0.18)',
+                  border: '1px solid rgba(255,255,255,0.28)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Icon size={17} color="white" strokeWidth={2.2} />
+                </div>
+              )}
+              <h2 id="modal-title" style={{
+                margin: 0, fontSize: 15, fontWeight: 700,
+                color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {title}
+              </h2>
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Cerrar"
+              style={{
+                width: 30, height: 30, borderRadius: 8, flexShrink: 0, marginLeft: 10,
+                background: 'rgba(255,255,255,0.14)',
+                border: '1px solid rgba(255,255,255,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <X size={14} color="rgba(255,255,255,0.9)" />
+            </button>
+          </div>
+        ) : (
+          // ── Header neutro (sin color) ─────────────────────────────────────
           <div className="flex items-center justify-between px-5 py-3.5 sm:py-4
                           border-b border-slate-100 flex-shrink-0">
             <h2 id="modal-title" className="text-base font-semibold text-slate-900 truncate pr-4">
@@ -96,7 +137,7 @@ export default function Modal({
               <X size={18} />
             </button>
           </div>
-        )}
+        ))}
 
         {/* Cuerpo */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5">

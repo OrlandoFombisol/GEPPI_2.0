@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Loader2, ArrowDownCircle, ArrowUpCircle, SlidersHorizontal } from 'lucide-react'
+import { Loader2, ArrowDownCircle, ArrowUpCircle, SlidersHorizontal, BarChart3 } from 'lucide-react'
 import { movimientoDB }                  from '@/db'
 import { TIPO_MOVIMIENTO, TIPO_MOVIMIENTO_LABEL } from '@/constants'
 import { formatearFechaHora }            from '@/utils/dates'
@@ -51,6 +51,7 @@ export default function KardexModal({ registro, eppNombre, sedeNombre, onClose }
       open
       onClose={onClose}
       title="Kardex de inventario"
+      icon={BarChart3} color="#7C3AED"
       size="xl"
       footer={<Button variant="secondary" onClick={onClose}>Cerrar</Button>}
     >

@@ -1,4 +1,5 @@
 import { useForm }    from 'react-hook-form'
+import { Briefcase }  from 'lucide-react'
 import { Modal, FormField, Input, Select, Button } from '@/components/ui'
 
 const NIVELES = ['Operativo', 'Técnico', 'Administrativo', 'Profesional', 'Directivo', 'Otro']
@@ -17,6 +18,7 @@ export default function CargoModal({ cargo, onSave, onClose, saving = false }) {
       open
       onClose={onClose}
       title={isEdit ? `Editar cargo: ${cargo.nombre}` : 'Nuevo cargo'}
+      icon={Briefcase} color="#2563EB"
       size="md"
       footer={
         <>
