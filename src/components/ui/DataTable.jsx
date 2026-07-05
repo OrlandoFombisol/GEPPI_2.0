@@ -140,7 +140,7 @@ export default function DataTable({
       {(searchable || headerActions) && (
         <div className="flex flex-wrap items-center gap-3">
           {searchable && (
-            <div className="relative flex-1 min-w-[200px] max-w-xs">
+            <div className="relative w-full sm:flex-1 sm:min-w-[180px] sm:max-w-xs">
               <Search
                 size={15}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"

@@ -146,7 +146,7 @@ export default function Modal({
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-2 sm:gap-3 px-4 sm:px-5 py-3.5 sm:py-4
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 px-4 sm:px-5 py-3.5 sm:py-4
                           border-t border-slate-100 flex-shrink-0">
             {footer}
           </div>

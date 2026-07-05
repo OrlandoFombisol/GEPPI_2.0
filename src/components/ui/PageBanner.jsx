@@ -150,8 +150,9 @@ export default function PageBanner() {
       initial={{ opacity: 0, y: -14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+      className="min-h-[72px] sm:min-h-[172px]"
       style={{
-        position: 'relative', width: '100%', minHeight: 172,
+        position: 'relative', width: '100%',
         overflow: 'hidden', borderRadius: 0,
       }}
     >
@@ -197,10 +198,10 @@ export default function PageBanner() {
       {/* Contenido — centrado verticalmente */}
       <div style={{
         position: 'absolute', inset: 0,
-        zIndex: 2, padding: '0 24px 0 28px',
-        display: 'flex', alignItems: 'center', gap: 18,
+        zIndex: 2, padding: '0 16px 0 20px',
+        display: 'flex', alignItems: 'center', gap: 14,
       }}>
-        {/* Título del módulo */}
+        {/* Título del módulo — siempre visible */}
         <div style={{ flexShrink: 0 }}>
           <p style={{
             margin: 0, color: 'rgba(255,255,255,0.7)',
@@ -217,14 +218,14 @@ export default function PageBanner() {
           </h2>
         </div>
 
-        {/* Divisor */}
-        <div style={{
+        {/* Divisor — solo escritorio */}
+        <div className="hidden sm:block" style={{
           width: 1, height: 52, flexShrink: 0,
           background: 'rgba(255,255,255,0.28)',
         }}/>
 
-        {/* Tip SST */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        {/* Tip SST — solo escritorio */}
+        <div className="hidden sm:flex" style={{ flex: 1, minWidth: 0, alignItems: 'flex-start', gap: 10 }}>
           <div style={{ flexShrink: 0, marginTop: 1 }}>
             <motion.div
               animate={{ rotate: [0, 8, -8, 0] }}
@@ -260,8 +261,9 @@ export default function PageBanner() {
           </div>
         </div>
 
-        {/* Botón siguiente tip */}
+        {/* Botón siguiente tip — solo escritorio */}
         <motion.button
+          className="hidden sm:flex"
           onClick={rotateTip}
           whileHover={{ scale: 1.12, background: 'rgba(255,255,255,0.22)' }}
           whileTap={{ scale: 0.92 }}
@@ -269,13 +271,37 @@ export default function PageBanner() {
             flexShrink: 0, width: 32, height: 32, borderRadius: '50%',
             background: 'rgba(255,255,255,0.12)',
             border: '1px solid rgba(255,255,255,0.25)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', color: 'white',
           }}
           title="Siguiente consejo"
         >
           <ChevronRight size={14} />
         </motion.button>
+
+        {/* Tip compacto — solo móvil */}
+        <div className="flex sm:hidden" style={{ flex: 1, minWidth: 0, alignItems: 'center', gap: 6 }}>
+          <Lightbulb size={12} color="#F7941D" strokeWidth={2.2} style={{ flexShrink: 0 }} />
+          <AnimatePresence mode="wait">
+            {show && (
+              <motion.p
+                key={tip}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                style={{
+                  margin: 0, color: 'rgba(255,255,255,0.80)',
+                  fontSize: 10.5, lineHeight: 1.35, fontWeight: 500,
+                  display: '-webkit-box', WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                }}
+              >
+                {tip}
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Barra de progreso del tip (9s) */}
