@@ -184,7 +184,6 @@ export default function Inspecciones() {
         />
       )}
     </AnimatePresence>
-    <div> {/* wrapper para el return único */}
     <div className="p-3 sm:p-6 space-y-5">
 
       {/* ── Cabecera ──────────────────────────────────────────────────────── */}
@@ -309,6 +308,6 @@ export default function Inspecciones() {
       </AnimatePresence>
 
     </div>
-    </> // cierre wrapper modales
+    </>
   )
 }
