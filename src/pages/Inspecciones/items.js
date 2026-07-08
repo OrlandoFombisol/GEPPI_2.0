@@ -59,6 +59,20 @@ export const ITEMS_POR_TIPO = {
 }
 
 export function calcularCumplimiento(items = []) {
+  // New extintores format: items[0] has extintorId + resultados map
+  if (items[0]?.extintorId !== undefined) {
+    let total = 0, cumple = 0
+    for (const ext of items) {
+      for (const val of Object.values(ext.resultados || {})) {
+        if (val.resultado && val.resultado !== 'NO_APLICA') {
+          total++
+          if (val.resultado === 'CUMPLE') cumple++
+        }
+      }
+    }
+    return total > 0 ? Math.round(cumple / total * 100) : 0
+  }
+  // Regular format
   const aplicables = items.filter(i => i.resultado !== 'NO_APLICA' && i.resultado)
   const cumple     = aplicables.filter(i => i.resultado === 'CUMPLE').length
   if (aplicables.length === 0) return 0
