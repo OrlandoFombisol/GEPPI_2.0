@@ -59,6 +59,9 @@ export default function ChecklistDetalle({ checklist, vehiculos, empresas, onVol
             <p className="font-semibold text-slate-800 mt-0.5 font-mono">
               {checklist.vehiculoPlaca || vehiculo?.placa || '—'}
             </p>
+            {checklist.vehiculoTipo && (
+              <p className="text-xs text-slate-500 mt-0.5">{checklist.vehiculoTipo}</p>
+            )}
           </div>
           <div>
             <p className="text-xs text-slate-400 font-medium uppercase">Fecha</p>

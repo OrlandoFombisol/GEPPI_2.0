@@ -92,6 +92,7 @@ export default function Operario() {
   const today = new Date().toISOString().slice(0, 10)
   const [fecha,        setFecha]        = useState(today)
   const [placa,        setPlaca]        = useState('')
+  const [vehiculoTipo, setVehiculoTipo] = useState('')
   const [items,        setItems]        = useState({})
   const [obs,          setObs]          = useState({})
   const [obsGeneral,   setObsGeneral]   = useState('')
@@ -164,8 +165,9 @@ export default function Operario() {
 
   const enviar = async () => {
     setErrorForm('')
-    if (!placa.trim())  return setErrorForm('Ingresa la placa del vehículo.')
-    if (!foto)          return setErrorForm('La foto del vehículo es obligatoria.')
+    if (!placa.trim())       return setErrorForm('Ingresa la placa del vehículo.')
+    if (!vehiculoTipo)       return setErrorForm('Selecciona el tipo de vehículo.')
+    if (!foto)               return setErrorForm('La foto del vehículo es obligatoria.')
     if (totalRespondidos < Math.ceil(ITEMS_CHECKLIST.length * 0.7))
       return setErrorForm(`Completa al menos el 70% del checklist (${Math.ceil(ITEMS_CHECKLIST.length * 0.7)} ítems).`)
 
@@ -181,14 +183,15 @@ export default function Operario() {
 
       const payload = toDB({
         fecha,
-        empresaId:         Number(empresaId),
-        vehiculoPlaca:     placa.trim().toUpperCase(),
-        conductorNombre:   `${conductor.nombres} ${conductor.apellidos}`,
-        conductorCedula:   cedula.trim(),
-        items:             itemsArray,
+        empresaId:          Number(empresaId),
+        vehiculoPlaca:      placa.trim().toUpperCase(),
+        vehiculoTipo,
+        conductorNombre:    `${conductor.nombres} ${conductor.apellidos}`,
+        conductorCedula:    cedula.trim(),
+        items:              itemsArray,
         observacionGeneral: obsGeneral.trim(),
-        fotoBase64:        foto,
-        fotoFecha:         new Date().toISOString(),
+        fotoBase64:         foto,
+        fotoFecha:          new Date().toISOString(),
       })
 
       const { error } = await supabase.from('checklist_preoperacional').insert(payload)
@@ -203,7 +206,7 @@ export default function Operario() {
 
   const reiniciar = () => {
     setPaso('auth'); setConductor(null); setCedula(''); setTrabajadorId('')
-    setPlaca(''); setItems({}); setObs({}); setObsGeneral(''); setFoto(null)
+    setPlaca(''); setVehiculoTipo(''); setItems({}); setObs({}); setObsGeneral(''); setFoto(null)
     setErrorForm(''); setErrorAuth('')
   }
 
@@ -346,6 +349,28 @@ export default function Operario() {
                   placeholder="ABC123" maxLength={8}
                   className="w-full h-12 px-4 rounded-xl border-2 border-slate-300 text-lg font-mono font-bold text-center uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 />
+              </div>
+
+              {/* Tipo de vehículo */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-3">
+                  Tipo de vehículo <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Motocarro', 'Camión Grande', 'Camión Pequeño', 'Moto'].map(tipo => (
+                    <button key={tipo} type="button"
+                      onClick={() => setVehiculoTipo(tipo)}
+                      className={[
+                        'py-2.5 px-3 rounded-xl text-sm font-semibold border-2 transition-all',
+                        vehiculoTipo === tipo
+                          ? 'border-blue-500 bg-blue-500 text-white'
+                          : 'border-slate-200 bg-white text-slate-600',
+                      ].join(' ')}
+                    >
+                      {tipo}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Foto */}

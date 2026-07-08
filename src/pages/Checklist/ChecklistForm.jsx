@@ -84,6 +84,8 @@ function ItemChecklist({ item, valor, observacion, onChange, onObservacion }) {
   )
 }
 
+const TIPOS_VEHICULO = ['Motocarro', 'Camión Grande', 'Camión Pequeño', 'Moto']
+
 // ─── Formulario principal ─────────────────────────────────────────────────────
 
 export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCancelar }) {
@@ -100,6 +102,7 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
   const [items,           setItems]           = useState({})
   const [observaciones,   setObservaciones]   = useState({})
   const [observacionGeneral, setObservacionGeneral] = useState('')
+  const [vehiculoTipo,    setVehiculoTipo]    = useState('')
   const [fotoBase64,      setFotoBase64]      = useState(null)
   const [guardando,       setGuardando]       = useState(false)
   const [error,           setError]           = useState('')
@@ -171,6 +174,7 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
     setError('')
 
     if (!empresaId)       return setError('Selecciona una empresa.')
+    if (!vehiculoTipo)    return setError('Selecciona el tipo de vehículo.')
     if (!conductorNombre.trim()) return setError('Ingresa el nombre del conductor.')
     if (!conductorCedula.trim()) return setError('Ingresa la cédula del conductor.')
     if (!fotoBase64)      return setError('La foto diaria del vehículo es obligatoria.')
@@ -206,6 +210,7 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
         empresaId:        Number(empresaId),
         vehiculoId:       finalVehiculoId,
         vehiculoPlaca:    vehiculoPlaca.trim().toUpperCase(),
+        vehiculoTipo,
         conductorNombre:  conductorNombre.trim(),
         conductorCedula:  conductorCedula.trim(),
         items:            itemsArray,
@@ -328,6 +333,19 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
               <span className="text-slate-500 ml-2">· CC {conductorCedula}</span>
             </div>
           )}
+
+          <div>
+            <label className="text-xs font-medium text-slate-600 block mb-1">Tipo de vehículo <span className="text-red-500">*</span></label>
+            <select
+              value={vehiculoTipo}
+              onChange={e => setVehiculoTipo(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-slate-300 text-sm bg-white
+                         focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">Seleccionar tipo…</option>
+              {TIPOS_VEHICULO.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
 
           <div>
             <label className="text-xs font-medium text-slate-600 block mb-1">Vehículo (placa)</label>
