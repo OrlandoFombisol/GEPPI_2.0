@@ -7,6 +7,7 @@ import { useUser } from '@/contexts/UserContext'
 import { TIPOS_INSPECCION, calcularCumplimiento } from './items'
 import InspeccionForm from './InspeccionForm'
 import InspeccionDetalle from './InspeccionDetalle'
+import InspeccionExtintoresForm from './InspeccionExtintoresForm'
 
 // ── Anillo SVG de cumplimiento ────────────────────────────────────────────────
 function RingPct({ pct, size = 52 }) {
@@ -120,14 +121,15 @@ export default function Inspecciones() {
   const [empresas,      setEmpresas]      = useState([])
   const [actividades,   setActividades]   = useState([])
   const [cargando,      setCargando]      = useState(true)
-  const [vistaForm,     setVistaForm]     = useState(false)
-  const [detalleId,     setDetalleId]     = useState(null)
+  const [vistaForm,       setVistaForm]       = useState(false)
+  const [vistaExtintores, setVistaExtintores] = useState(false)
+  const [detalleId,       setDetalleId]       = useState(null)
   const [filtroTipo,    setFiltroTipo]    = useState('')
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
   const [busqueda,      setBusqueda]      = useState('')
 
   // Volver a lista inicial al hacer clic en el módulo desde el sidebar
-  useEffect(() => { setVistaForm(false); setDetalleId(null) }, [location.key])
+  useEffect(() => { setVistaForm(false); setVistaExtintores(false); setDetalleId(null) }, [location.key])
 
   const cargarDatos = async () => {
     setCargando(true)
@@ -169,6 +171,17 @@ export default function Inspecciones() {
 
   const detalleInspeccion = inspecciones.find(i => i.id === detalleId) || null
 
+  if (vistaExtintores) {
+    return (
+      <InspeccionExtintoresForm
+        empresas={empresas}
+        usuarioId={user?.id}
+        onGuardado={() => { setVistaExtintores(false); cargarDatos() }}
+        onCancelar={() => setVistaExtintores(false)}
+      />
+    )
+  }
+
   return (
     <>
     {/* Modales superpuestos — no reemplazan la página */}
@@ -180,6 +193,7 @@ export default function Inspecciones() {
           usuarioId={user?.id}
           onGuardado={() => { setVistaForm(false); cargarDatos() }}
           onCancelar={() => setVistaForm(false)}
+          onExtintores={() => { setVistaForm(false); setVistaExtintores(true) }}
         />
       )}
       {detalleInspeccion && (

@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import { X, Printer, CheckCircle2, XCircle, MinusCircle, AlertTriangle, Shield } from 'lucide-react'
 import { calcularCumplimiento, TIPOS_INSPECCION } from './items'
@@ -52,21 +51,168 @@ function FilaItem({ item }) {
   )
 }
 
+const ITEMS_EXTINTOR_LABELS = {
+  A: 'Ubicado en lugar designado y accesible',
+  B: 'Señalización visible',
+  C: 'Acceso libre de obstáculos',
+  D: 'Precintos y sellos en buen estado',
+  E: 'Pasador de seguridad en su lugar',
+  F: 'Presión correcta (manómetro verde)',
+  G: 'Manómetro en buen estado',
+  H: 'Manguera y boquilla en buen estado',
+  I: 'Cilindro sin golpes ni corrosión',
+  J: 'Instrucciones de operación visibles',
+  K: 'Tarjeta de inspección al día',
+  L: 'Mango y palanca en buen estado',
+  M: 'Válvula en posición de operación',
+}
+const ITEM_IDS = ['A','B','C','D','E','F','G','H','I','J','K','L','M']
+
 export default function InspeccionDetalle({ inspeccion, onVolver }) {
   if (!inspeccion) return null
 
-  const tipoMeta  = TIPOS_INSPECCION.find(t => t.value === inspeccion.tipo) || {}
-  const items     = inspeccion.items || []
-  const pct       = calcularCumplimiento(items)
-  const noCumplen = items.filter(i => i.resultado === 'NO_CUMPLE')
-  const cumplen   = items.filter(i => i.resultado === 'CUMPLE')
-  const noAplica  = items.filter(i => i.resultado === 'NO_APLICA')
-  const color     = tipoMeta.color || '#1b62cc'
-  const fechaFmt  = inspeccion.fecha
+  const tipoMeta       = TIPOS_INSPECCION.find(t => t.value === inspeccion.tipo) || {}
+  const items          = inspeccion.items || []
+  const isExtintoresNew = inspeccion.tipo === 'EXTINTORES' && items[0]?.extintorId !== undefined
+  const pct            = calcularCumplimiento(items)
+  const color          = tipoMeta.color || '#1b62cc'
+  const fechaFmt       = inspeccion.fecha
     ? new Date(inspeccion.fecha + 'T12:00:00').toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
+    : '—'
+  const mesFmt         = inspeccion.fecha
+    ? new Date(inspeccion.fecha + 'T12:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
     : '—'
   const colorPct  = pct >= 85 ? '#16A34A' : pct >= 60 ? '#D97706' : '#DC2626'
   const labelPct  = pct >= 85 ? 'APROBADO' : pct >= 60 ? 'PARCIAL' : 'CRÍTICO'
+
+  // Stats for regular format
+  const noCumplen = isExtintoresNew ? [] : items.filter(i => i.resultado === 'NO_CUMPLE')
+  const cumplen   = isExtintoresNew ? [] : items.filter(i => i.resultado === 'CUMPLE')
+  const noAplica  = isExtintoresNew ? [] : items.filter(i => i.resultado === 'NO_APLICA')
+
+  // Stats for extintores format
+  const extStats = isExtintoresNew ? (() => {
+    let c = 0, nc = 0, na = 0
+    for (const ext of items) {
+      for (const v of Object.values(ext.resultados || {})) {
+        if (v.resultado === 'CUMPLE') c++
+        else if (v.resultado === 'NO_CUMPLE') nc++
+        else na++
+      }
+    }
+    return { c, nc, na }
+  })() : null
+
+  const handlePrintExtintores = () => {
+    const w = window.open('', '_blank', 'width=1200,height=900')
+    const empresa = inspeccion.empresa?.razon_social || '—'
+    const observaciones = []
+    items.forEach(ext => {
+      ITEM_IDS.forEach(id => {
+        const r = ext.resultados?.[id]
+        if (r?.resultado === 'NO_CUMPLE' && r.observacion)
+          observaciones.push(`Ext.#${ext.numero} ítem ${id}: ${r.observacion}`)
+      })
+    })
+    const cellColor = v => v === 'CUMPLE' ? '#dcfce7' : v === 'NO_CUMPLE' ? '#fee2e2' : '#f1f5f9'
+    const cellText  = v => v === 'CUMPLE' ? '#15803d' : v === 'NO_CUMPLE' ? '#991b1b' : '#64748b'
+    const cellLabel = v => v === 'CUMPLE' ? 'C' : v === 'NO_CUMPLE' ? 'NC' : 'NA'
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Inspección Extintores — ${empresa}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1e293b}
+.hdr{background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;padding:18px 28px;display:flex;justify-content:space-between;align-items:center}
+.hdr h1{font-size:18px;font-weight:900;margin-bottom:3px}
+.hdr p{font-size:11px;opacity:.75}
+.box{background:rgba(255,255,255,0.15);border-radius:10px;padding:10px 18px;text-align:center;border:1px solid rgba(255,255,255,0.2);min-width:90px}
+.box b{font-size:32px;font-weight:900;color:#fff;display:block;line-height:1}
+.box small{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.65)}
+.body{padding:16px 28px}
+.meta{display:flex;gap:24px;flex-wrap:wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px;margin-bottom:14px}
+.m{min-width:130px}
+.m label{font-size:9px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;display:block}
+.m span{font-weight:700;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#1e293b;color:#fff;padding:5px 4px;text-align:center;font-weight:700}
+th.left{text-align:left;padding-left:8px}
+td{padding:4px;text-align:center;border:1px solid #e2e8f0;vertical-align:middle}
+td.info{text-align:left;padding-left:8px;font-weight:600}
+td.sub{font-size:10px;color:#64748b;font-weight:400}
+tr:nth-child(even) td{background:#f8fafc}
+.badge{display:inline-block;padding:1px 5px;border-radius:99px;font-size:10px;font-weight:700;width:26px}
+.obs-list{margin-top:12px;background:#fff8f0;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px}
+.obs-list p{font-size:11px;margin-top:4px;color:#7c2d12}
+h2{font-size:10px;font-weight:700;color:#64748b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #f1f5f9;margin-top:12px}
+.legend{display:flex;gap:12px;margin-top:8px;font-size:10px}
+.litem{display:flex;align-items:center;gap:4px}
+.ldot{width:14px;height:14px;border-radius:3px;display:inline-block}
+.foot{margin-top:20px;display:flex;justify-content:space-between;border-top:1px solid #e2e8f0;padding-top:12px}
+.firma{border-top:2px solid #1e293b;padding-top:4px;font-size:10px;color:#64748b;text-align:center;margin-top:28px;width:180px}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:landscape A4;margin:12mm}}
+</style></head><body>
+<div class="hdr">
+  <div>
+    <p style="font-size:9px;opacity:.65;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">GEPPI · SST</p>
+    <h1>🧯 Inspección de Extintores</h1>
+    <p>${empresa} &nbsp;·&nbsp; ${inspeccion.sede || '—'} &nbsp;·&nbsp; ${mesFmt}</p>
+  </div>
+  <div style="display:flex;gap:10px">
+    <div class="box"><b>${pct}%</b><small>${labelPct}</small></div>
+    <div class="box"><b>${extStats?.nc || 0}</b><small>NO CUMPLEN</small></div>
+  </div>
+</div>
+<div class="body">
+  <div class="meta">
+    <div class="m"><label>Inspector</label><span>${inspeccion.inspector || '—'}</span></div>
+    <div class="m"><label>Empresa</label><span>${empresa}</span></div>
+    <div class="m"><label>Sede</label><span>${inspeccion.sede || '—'}</span></div>
+    <div class="m"><label>Mes</label><span>${mesFmt}</span></div>
+    <div class="m"><label>Extintores inspeccionados</label><span>${items.length}</span></div>
+  </div>
+  <h2>Resultado por extintor</h2>
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th class="left" style="width:28px">#</th>
+        <th class="left" style="min-width:70px">Tipo</th>
+        <th class="left" style="min-width:90px">Ubicación</th>
+        ${ITEM_IDS.map(id => `<th style="width:30px">${id}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${items.map(ext => `
+      <tr>
+        <td class="info">${ext.numero}</td>
+        <td class="info">${ext.tipo || '—'}</td>
+        <td class="sub">${ext.ubicacion || '—'}</td>
+        ${ITEM_IDS.map(id => {
+          const v = ext.resultados?.[id]?.resultado
+          return `<td><span class="badge" style="background:${cellColor(v)};color:${cellText(v)}">${cellLabel(v)}</span></td>`
+        }).join('')}
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  </div>
+  <div class="legend">
+    <div class="litem"><span class="ldot" style="background:#dcfce7;border:1px solid #bbf7d0"></span> C = Cumple</div>
+    <div class="litem"><span class="ldot" style="background:#fee2e2;border:1px solid #fecaca"></span> NC = No Cumple</div>
+    <div class="litem"><span class="ldot" style="background:#f1f5f9;border:1px solid #e2e8f0"></span> NA = No Aplica</div>
+  </div>
+  ${observaciones.length > 0 ? `
+  <div class="obs-list">
+    <h2 style="border:none;margin:0 0 6px 0;color:#7c2d12">Observaciones (ítems No Cumple)</h2>
+    ${observaciones.map(o => `<p>• ${o}</p>`).join('')}
+  </div>` : ''}
+  <div class="foot">
+    <p style="font-size:10px;color:#94a3b8">GEPPI v2.0 · ${new Date().toLocaleString('es-CO')}</p>
+    <div class="firma">Firma del Inspector</div>
+  </div>
+</div></body></html>`)
+    w.document.close(); w.focus()
+    setTimeout(() => { w.print(); w.close() }, 450)
+  }
 
   const handlePrint = () => {
     const w = window.open('', '_blank', 'width=820,height=960')
@@ -175,7 +321,7 @@ foto{max-width:240px;max-height:160px;border-radius:8px;border:1px solid #e2e8f0
             <div className="flex-1">
               <p className="text-xs font-semibold text-white/60 uppercase tracking-widest">Informe de Inspección</p>
             </div>
-            <button onClick={handlePrint}
+            <button onClick={isExtintoresNew ? handlePrintExtintores : handlePrint}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/15 text-white text-xs font-semibold hover:bg-white/25 transition-colors border border-white/20">
               <Printer size={12} /> Imprimir
             </button>
@@ -186,17 +332,27 @@ foto{max-width:240px;max-height:160px;border-radius:8px;border:1px solid #e2e8f0
               <p className="text-2xl mb-1">{tipoMeta.emoji}</p>
               <h2 className="text-lg font-black text-white">{tipoMeta.label || inspeccion.tipo}</h2>
               <p className="text-sm text-white/70 truncate">{inspeccion.empresa?.razon_social || '—'}</p>
-              <p className="text-xs text-white/50">{fechaFmt} · {inspeccion.inspector}</p>
+              <p className="text-xs text-white/50">
+                {isExtintoresNew ? mesFmt : fechaFmt} · {inspeccion.inspector}
+                {isExtintoresNew && inspeccion.sede ? ` · ${inspeccion.sede}` : ''}
+              </p>
             </div>
             <RingPct pct={pct} size={96} />
           </div>
           {/* Stats bar */}
           <div className="flex border-t border-white/15">
-            {[
-              { v: cumplen.length,   l: 'Cumplen',    c: 'text-emerald-200' },
-              { v: noCumplen.length, l: 'No cumplen', c: 'text-red-200'     },
-              { v: noAplica.length,  l: 'No aplica',  c: 'text-white/50'    },
-            ].map((s, i) => (
+            {(isExtintoresNew
+              ? [
+                  { v: items.length,  l: 'Extintores', c: 'text-white/80' },
+                  { v: extStats.c,    l: 'Cumplen',    c: 'text-emerald-200' },
+                  { v: extStats.nc,   l: 'No cumplen', c: extStats.nc > 0 ? 'text-red-200' : 'text-white/50' },
+                ]
+              : [
+                  { v: cumplen.length,   l: 'Cumplen',    c: 'text-emerald-200' },
+                  { v: noCumplen.length, l: 'No cumplen', c: 'text-red-200'     },
+                  { v: noAplica.length,  l: 'No aplica',  c: 'text-white/50'    },
+                ]
+            ).map((s, i) => (
               <div key={i} className={`flex-1 py-2.5 text-center ${i > 0 ? 'border-l border-white/15' : ''}`}>
                 <p className={`text-lg font-black ${s.c}`}>{s.v}</p>
                 <p className="text-xs text-white/45">{s.l}</p>
@@ -208,8 +364,8 @@ foto{max-width:240px;max-height:160px;border-radius:8px;border:1px solid #e2e8f0
         {/* Cuerpo scrollable */}
         <div className="overflow-y-auto p-5 space-y-4" style={{ maxHeight: 'calc(100vh - 320px)' }}>
 
-          {/* Alerta no conformidades */}
-          {noCumplen.length > 0 && (
+          {/* Alerta no conformidades — regular format */}
+          {!isExtintoresNew && noCumplen.length > 0 && (
             <div className="flex items-start gap-3 p-3.5 bg-red-50 rounded-xl border border-red-100">
               <AlertTriangle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
               <div>
@@ -219,8 +375,8 @@ foto{max-width:240px;max-height:160px;border-radius:8px;border:1px solid #e2e8f0
             </div>
           )}
 
-          {/* Foto */}
-          {inspeccion.fotoBase64 && (
+          {/* Foto — only for regular format */}
+          {!isExtintoresNew && inspeccion.fotoBase64 && (
             <div className="overflow-hidden rounded-xl border border-slate-100">
               <img src={inspeccion.fotoBase64} alt="Evidencia" className="w-full max-h-52 object-cover" />
               <div className="px-3 py-2 bg-slate-50 flex items-center gap-2 border-t border-slate-100">
@@ -230,14 +386,81 @@ foto{max-width:240px;max-height:160px;border-radius:8px;border:1px solid #e2e8f0
             </div>
           )}
 
-          {/* Ítems */}
-          <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Resultado por ítems</p>
-            {items.map(item => <FilaItem key={item.id} item={item} />)}
-          </div>
+          {/* Regular items */}
+          {!isExtintoresNew && (
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Resultado por ítems</p>
+              {items.map(item => <FilaItem key={item.id} item={item} />)}
+            </div>
+          )}
 
-          {/* Observación */}
-          {inspeccion.observacionGeneral && (
+          {/* Extintores — table view */}
+          {isExtintoresNew && (
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+                Resultado por extintor — {mesFmt}
+              </p>
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-xs border-collapse" style={{ minWidth: 640 }}>
+                  <thead>
+                    <tr className="bg-slate-800 text-white">
+                      <th className="text-left px-3 py-2 font-bold">#</th>
+                      <th className="text-left px-3 py-2 font-bold">Tipo</th>
+                      <th className="text-left px-3 py-2 font-bold">Ubicación</th>
+                      {ITEM_IDS.map(id => (
+                        <th key={id} className="px-1.5 py-2 font-bold text-center w-8">{id}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((ext, ri) => (
+                      <tr key={ext.extintorId} className={ri % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                        <td className="px-3 py-2 font-bold text-slate-700">{ext.numero}</td>
+                        <td className="px-3 py-2 text-slate-600">{ext.tipo || '—'}</td>
+                        <td className="px-3 py-2 text-slate-500 max-w-[120px] truncate">{ext.ubicacion || '—'}</td>
+                        {ITEM_IDS.map(id => {
+                          const v = ext.resultados?.[id]?.resultado
+                          const bg = v === 'CUMPLE' ? 'bg-emerald-100 text-emerald-700' : v === 'NO_CUMPLE' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-500'
+                          return (
+                            <td key={id} className="px-1 py-2 text-center">
+                              <span className={`inline-block px-1 py-0.5 rounded text-[10px] font-bold ${bg}`}>
+                                {v === 'CUMPLE' ? 'C' : v === 'NO_CUMPLE' ? 'NC' : 'NA'}
+                              </span>
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Observations for NC items */}
+              {(() => {
+                const obs = []
+                items.forEach(ext => {
+                  ITEM_IDS.forEach(id => {
+                    const r = ext.resultados?.[id]
+                    if (r?.resultado === 'NO_CUMPLE' && r.observacion)
+                      obs.push({ ext: ext.numero, id, text: r.observacion })
+                  })
+                })
+                return obs.length > 0 ? (
+                  <div className="mt-3 bg-orange-50 rounded-xl border border-orange-100 p-3">
+                    <p className="text-xs font-bold text-orange-700 uppercase tracking-widest mb-2">Observaciones</p>
+                    {obs.map((o, i) => (
+                      <p key={i} className="text-xs text-orange-800 mb-1">
+                        <span className="font-bold">Ext.#{o.ext} ítem {o.id}:</span> {o.text}
+                      </p>
+                    ))}
+                  </div>
+                ) : null
+              })()}
+            </div>
+          )}
+
+          {/* Observación general — regular format only */}
+          {!isExtintoresNew && inspeccion.observacionGeneral && (
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Observación general</p>
               <p className="text-sm text-slate-600 leading-relaxed">{inspeccion.observacionGeneral}</p>

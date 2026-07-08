@@ -80,7 +80,7 @@ function ItemInspeccion({ item, resultado, accionTipo, accionDescripcion, onChan
 }
 
 // ─── Componente exportado ─────────────────────────────────────────────────────
-export default function InspeccionForm({ empresas = [], actividadesPAT = [], usuarioId, onGuardado, onCancelar }) {
+export default function InspeccionForm({ empresas = [], actividadesPAT = [], usuarioId, onGuardado, onCancelar, onExtintores }) {
   const [tipo,        setTipo]        = useState('')
   const [empresaId,   setEmpresaId]   = useState('')
   const [fecha,       setFecha]       = useState(new Date().toISOString().slice(0, 10))
@@ -211,7 +211,10 @@ export default function InspeccionForm({ empresas = [], actividadesPAT = [], usu
                   initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06 }}
                   whileHover={{ x: 4 }} whileTap={{ scale: 0.98 }}
-                  onClick={() => { setTipo(meta.value); setResultados({}) }}
+                  onClick={() => {
+                    if (meta.value === 'EXTINTORES' && onExtintores) { onExtintores(); return }
+                    setTipo(meta.value); setResultados({})
+                  }}
                   className="flex items-center gap-4 w-full p-3.5 bg-white rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all text-left"
                 >
                   <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"

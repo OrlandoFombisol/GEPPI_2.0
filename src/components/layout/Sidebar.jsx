@@ -59,7 +59,7 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Seguridad Vial',
+    label: 'Inspecciones',
     sectionIcon: Car,
     sectionColor: '#06B6D4',
     items: [

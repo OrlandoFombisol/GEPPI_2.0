@@ -602,6 +602,40 @@ export const inspeccionDB = {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  EXTINTORES — catálogo por empresa/sede
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const extintorDB = {
+  async getBySede(empresaId, sede) {
+    const data = await q('extintor.getBySede',
+      supabase.from('extintor')
+        .select('*')
+        .eq('empresa_id', empresaId)
+        .eq('sede', sede)
+        .eq('estado', 'ACTIVO')
+        .order('numero'))
+    return manyFromDB(data)
+  },
+  async getSedes(empresaId) {
+    const data = await q('extintor.getSedes',
+      supabase.from('extintor')
+        .select('sede')
+        .eq('empresa_id', empresaId)
+        .eq('estado', 'ACTIVO'))
+    return [...new Set((data || []).map(r => r.sede))].sort()
+  },
+  async create(data) {
+    const row = await one('extintor.create',
+      supabase.from('extintor').insert(toDB(data)).select('id').single())
+    return row?.id
+  },
+  async remove(id) {
+    await q('extintor.remove',
+      supabase.from('extintor').update({ estado: 'INACTIVO' }).eq('id', id))
+  },
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  EVIDENCIAS PLAN DE TRABAJO
 // ─────────────────────────────────────────────────────────────────────────────
 
