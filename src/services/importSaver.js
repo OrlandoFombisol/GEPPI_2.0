@@ -1,8 +1,8 @@
-import { db } from '@/db'
+import { eppDB, cargoDB, asignacionDB, gestionCambioDB, auditoriaDB } from '@/db'
 import { MODULO, ACCION } from '@/constants'
 
 /**
- * Guarda en Dexie.js los datos parseados del Excel MT-SST-005.
+ * Guarda en Supabase los datos parseados del Excel MT-SST-005.
  * Estrategia upsert: actualiza si ya existe, inserta si es nuevo.
  *
  * @param {{ epps, cargos, asignaciones, cambios }} datos — resultado de parseCompleto()
@@ -26,51 +26,53 @@ export async function guardarImportacion(datos, onProgress = () => {}) {
   let procesados = 0
   const tick = (msg) => { procesados++; onProgress(Math.round((procesados / total) * 100), msg) }
 
-  const ahora = new Date().toISOString()
-
   // ── 1. EPP ───────────────────────────────────────────────────────────────────
-  onProgress(0, 'Guardando elementos de protección personal…')
-  const eppIdPorItem = {}   // item → db id
+  onProgress(0, 'Cargando EPP existentes…')
+  const eppExistentes = await eppDB.getAll()
+  const eppPorItem = Object.fromEntries((eppExistentes || []).map(e => [e.item, e]))
+  const eppIdPorItem = {}
 
   for (const epp of epps) {
     try {
-      const existente = await db.epp.where('item').equals(epp.item).first()
+      const existente = eppPorItem[epp.item]
       if (existente) {
-        await db.epp.update(existente.id, {
+        await eppDB.update(existente.id, {
           nombre: epp.nombre, categoria: epp.categoria, norma: epp.norma,
           marcaSugerida: epp.marcaSugerida, vidaUtilDias: epp.vidaUtilDias,
-          descripcion: epp.descripcion, version: epp.version, updatedAt: ahora,
+          descripcion: epp.descripcion, version: epp.version,
         })
         eppIdPorItem[epp.item] = existente.id
         stats.eppActualizados++
       } else {
-        const id = await db.epp.add({ ...epp, createdAt: ahora, updatedAt: ahora })
+        const id = await eppDB.create(epp)
         eppIdPorItem[epp.item] = id
         stats.eppImportados++
       }
-    } catch (err) {
-      errores.push(`EPP "${epp.nombre}": ${err.message}`)
+    } catch (e) {
+      errores.push(`EPP "${epp.nombre}": ${e.message}`)
     }
     tick(`EPP: ${epp.nombre}`)
   }
 
   // ── 2. Cargos ────────────────────────────────────────────────────────────────
-  onProgress(Math.round((epps.length / total) * 100), 'Guardando cargos…')
-  const cargoIdPorNombre = {}   // nombre → db id
+  onProgress(Math.round((epps.length / total) * 100), 'Cargando cargos existentes…')
+  const cargosExistentes = await cargoDB.getAll()
+  const cargoPorNombre = Object.fromEntries((cargosExistentes || []).map(c => [c.nombre, c]))
+  const cargoIdPorNombre = {}
 
   for (const nombre of cargos) {
     try {
-      const existente = await db.cargo.where('nombre').equals(nombre).first()
+      const existente = cargoPorNombre[nombre]
       if (existente) {
         cargoIdPorNombre[nombre] = existente.id
         stats.cargosActualizados++
       } else {
-        const id = await db.cargo.add({ nombre, estado: 'ACTIVO', createdAt: ahora })
+        const id = await cargoDB.create({ nombre })
         cargoIdPorNombre[nombre] = id
         stats.cargosImportados++
       }
-    } catch (err) {
-      errores.push(`Cargo "${nombre}": ${err.message}`)
+    } catch (e) {
+      errores.push(`Cargo "${nombre}": ${e.message}`)
     }
     tick(`Cargo: ${nombre}`)
   }
@@ -78,8 +80,10 @@ export async function guardarImportacion(datos, onProgress = () => {}) {
   // ── 3. Asignaciones Cargo-EPP ────────────────────────────────────────────────
   onProgress(
     Math.round(((epps.length + cargos.length) / total) * 100),
-    'Guardando matriz de asignaciones…'
+    'Cargando asignaciones existentes…'
   )
+  const asigExistentes = await asignacionDB.getAll()
+  const asigSet = new Set((asigExistentes || []).map(a => `${a.cargoId}:${a.eppId}`))
 
   for (const asig of asignaciones) {
     try {
@@ -92,30 +96,29 @@ export async function guardarImportacion(datos, onProgress = () => {}) {
         continue
       }
 
-      const existente = await db.asignacionCargoEpp
-        .where('[cargoId+eppId]').equals([cargoId, eppId]).first()
-
-      if (!existente) {
-        await db.asignacionCargoEpp.add({ cargoId, eppId, vigente: 1, createdAt: ahora })
-        stats.asignacionesImportadas++
-      } else {
+      const key = `${cargoId}:${eppId}`
+      if (asigSet.has(key)) {
         stats.asignacionesDuplicadas++
+      } else {
+        await asignacionDB.bulkCreate([{ cargoId, eppId, vigente: true }])
+        asigSet.add(key)
+        stats.asignacionesImportadas++
       }
-    } catch (err) {
-      errores.push(`Asignación cargo "${asig.cargoNombre}" EPP ${asig.eppItem}: ${err.message}`)
+    } catch (e) {
+      errores.push(`Asignación cargo "${asig.cargoNombre}" EPP ${asig.eppItem}: ${e.message}`)
     }
     tick('Asignación')
   }
 
   // ── 4. Gestión del cambio ────────────────────────────────────────────────────
   onProgress(95, 'Guardando historial de versiones…')
+  const cambiosExistentes = await gestionCambioDB.getAll()
+  const versionesExistentes = new Set((cambiosExistentes || []).map(c => c.versionNueva))
 
   for (const cambio of cambios) {
     try {
-      const existe = await db.gestionCambio
-        .where('versionNueva').equals(cambio.version).first()
-      if (!existe) {
-        await db.gestionCambio.add({
+      if (!versionesExistentes.has(cambio.version)) {
+        await gestionCambioDB.create({
           codigoDocumento:  cambio.codigoDocumento,
           modulo:           cambio.modulo,
           versionNueva:     cambio.version,
@@ -123,28 +126,24 @@ export async function guardarImportacion(datos, onProgress = () => {}) {
           descripcion:      cambio.descripcion,
           responsable:      cambio.responsable,
           cargoResponsable: cambio.cargoResponsable,
-          createdAt:        ahora,
         })
         stats.cambiosImportados++
       }
-    } catch (err) {
-      errores.push(`Cambio versión "${cambio.version}": ${err.message}`)
+    } catch (e) {
+      errores.push(`Cambio versión "${cambio.version}": ${e.message}`)
     }
     tick(`Cambio v${cambio.version}`)
   }
 
   // ── 5. Auditoría ─────────────────────────────────────────────────────────────
   try {
-    await db.auditoria.add({
-      modulo:      MODULO.CONFIGURACION,
-      accion:      ACCION.IMPORTAR,
-      descripcion: `MT-SST-005: ${stats.eppImportados + stats.eppActualizados} EPP, ` +
-                   `${stats.cargosImportados + stats.cargosActualizados} cargos, ` +
-                   `${stats.asignacionesImportadas} asignaciones nuevas`,
-      usuarioId:   1,
-      referenciaId: null,
-      fecha:       ahora,
-    })
+    await auditoriaDB.registrar(
+      MODULO.CONFIGURACION,
+      ACCION.IMPORTAR,
+      `MT-SST-005: ${stats.eppImportados + stats.eppActualizados} EPP, ` +
+      `${stats.cargosImportados + stats.cargosActualizados} cargos, ` +
+      `${stats.asignacionesImportadas} asignaciones nuevas`,
+    )
   } catch (_) {
     // auditoría no bloquea la importación
   }

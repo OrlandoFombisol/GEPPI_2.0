@@ -485,6 +485,10 @@ export const entregaDB = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const detalleEntregaDB = {
+  async getAll() {
+    const data = await q('detalle.getAll', supabase.from('detalle_entrega').select('*'))
+    return manyFromDB(data)
+  },
   async getPorEntrega(entregaId) {
     const data = await q('detalle.getPorEntrega',
       supabase.from('detalle_entrega').select('*').eq('entrega_id', entregaId))

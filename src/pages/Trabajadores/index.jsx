@@ -85,10 +85,11 @@ function ModalConfirmar({ item, onConfirm, onClose, saving }) {
 // ─── Modal importar Excel trabajadores ───────────────────────────────────────
 
 function ModalImportarTrabajadores({ cargos, sedes, empresas, onImportados, onClose }) {
-  const [resultado,  setResultado]  = useState(null)
-  const [cargando,   setCargando]   = useState(false)
-  const [guardando,  setGuardando]  = useState(false)
-  const [error,      setError]      = useState('')
+  const [resultado,    setResultado]    = useState(null)
+  const [cargando,     setCargando]     = useState(false)
+  const [guardando,    setGuardando]    = useState(false)
+  const [error,        setError]        = useState('')
+  const [errorGuardar, setErrorGuardar] = useState('')
   const fileRef = useRef()
 
   const procesarArchivo = async (e) => {
@@ -109,28 +110,41 @@ function ModalImportarTrabajadores({ cargos, sedes, empresas, onImportados, onCl
   const confirmarImportacion = async () => {
     if (!resultado) return
     setGuardando(true)
+    setErrorGuardar('')
     try {
       let creados = 0, actualizados = 0
       for (const t of resultado.trabajadores) {
+        // Extraer solo los campos del DB (eliminar los campos de vista previa _*)
+        const { _cargoNombre, _empresaNombre, _sedeNombre, ...trabajadorData } = t
         try {
-          const existente = await trabajadorDB.getByCedula(t.cedula)
+          const existente = await trabajadorDB.getByCedula(trabajadorData.cedula)
           if (existente) {
             await trabajadorDB.update(existente.id, {
-              nombres:   t.nombres,
-              apellidos: t.apellidos,
-              cargoId:   t.cargoId,
-              sedeId:    t.sedeId,
-              empresaId: t.empresaId,
+              nombres:   trabajadorData.nombres,
+              apellidos: trabajadorData.apellidos,
+              cargoId:   trabajadorData.cargoId,
+              sedeId:    trabajadorData.sedeId,
+              empresaId: trabajadorData.empresaId,
               estado:    'ACTIVO',
             })
             actualizados++
           } else {
-            await trabajadorDB.create(t)
+            await trabajadorDB.create(trabajadorData)
             creados++
           }
-        } catch { /* ignorar cédula duplicada */ }
+        } catch (err) {
+          const isDuplicate = err.message?.toLowerCase().includes('cedula')
+            || err.message?.toLowerCase().includes('duplicate')
+            || err.message?.toLowerCase().includes('unique')
+          if (!isDuplicate) {
+            setErrorGuardar(`Error al guardar cédula ${trabajadorData.cedula}: ${err.message}`)
+            return
+          }
+        }
       }
       onImportados({ creados, actualizados })
+    } catch (err) {
+      setErrorGuardar(`Error inesperado: ${err.message}`)
     } finally {
       setGuardando(false)
     }
@@ -160,7 +174,8 @@ function ModalImportarTrabajadores({ cargos, sedes, empresas, onImportados, onCl
             {cargando ? 'Procesando...' : 'Seleccionar archivo Excel'}
           </Button>
         </div>
-        {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">{error}</div>}
+        {error        && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">{error}</div>}
+        {errorGuardar && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">{errorGuardar}</div>}
         {resultado && (
           <div className="space-y-3">
             {resultado.errores.map((e, i) => (

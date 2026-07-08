@@ -1,5 +1,4 @@
-import dbSchema             from '@/db/schema'
-import { inventarioDB, eppDB, alertaDB } from '@/db'
+import { entregaDB, inventarioDB, eppDB, alertaDB, detalleEntregaDB } from '@/db'
 import { TIPO_ALERTA, NIVEL_ALERTA }     from '@/constants'
 import { calcularEstadoEPP, diasParaVencimiento } from '@/utils/dates'
 
@@ -15,11 +14,11 @@ export async function generarAlertas() {
   let nuevas = 0
 
   // ── 1. EPP por vencimiento ────────────────────────────────────────────────
-  const entregas = await dbSchema.entrega
-    .filter(e => e.estado === 'FIRMADA').toArray()
+  const todasEntregas = await entregaDB.getAll()
+  const entregas = (todasEntregas || []).filter(e => e.estado === 'FIRMADA')
   const entregaMap = Object.fromEntries(entregas.map(e => [e.id, e]))
 
-  const detalles = await dbSchema.detalleEntrega.toArray()
+  const detalles = await detalleEntregaDB.getAll()
   const todosEPP = await eppDB.getAll()
   const eppMap   = Object.fromEntries((todosEPP || []).map(e => [e.id, e]))
 

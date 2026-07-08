@@ -2,10 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { format, startOfDay, startOfMonth, subMonths, isSameMonth } from 'date-fns'
 import { es }          from 'date-fns/locale'
 import {
-  trabajadorDB, entregaDB, inventarioDB,
+  trabajadorDB, entregaDB, inventarioDB, detalleEntregaDB,
   alertaDB, eppDB, sedeDB, empresaDB,
 } from '@/db'
-import db                  from '@/db/schema'  // acceso directo para detalleEntrega
 import { calcularEstadoEPP, diasParaVencimiento } from '@/utils/dates'
 import { ESTADO_EPP, ESTADO_EPP_LABEL, NIVEL_ALERTA } from '@/constants'
 
@@ -24,7 +23,7 @@ export function useDashboardData() {
         await Promise.all([
           trabajadorDB.getAll(),
           entregaDB.getAll(),
-          db.detalleEntrega.toArray(),
+          detalleEntregaDB.getAll(),
           inventarioDB.getAll(),
           alertaDB.getAll(),
           eppDB.getAll(),
