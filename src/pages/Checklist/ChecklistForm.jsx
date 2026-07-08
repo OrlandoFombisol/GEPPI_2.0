@@ -253,7 +253,7 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
                          focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="">Seleccionar empresa</option>
-              {empresas.filter(e => e.estado === 'ACTIVO').map(e => (
+              {empresas.filter(e => e.estado !== 'INACTIVO').map(e => (
                 <option key={e.id} value={e.id}>{e.razonSocial}</option>
               ))}
             </select>
