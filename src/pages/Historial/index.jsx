@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import { History, FileCheck2 }          from 'lucide-react'
 import {
   entregaDB, trabajadorDB, cargoDB, sedeDB,
@@ -49,6 +50,7 @@ const COLUMNAS = [
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function Page() {
+  const location = useLocation()
   const [entregas,     setEntregas]     = useState([])
   const [trabajadores, setTrabajadores] = useState([])
   const [cargos,       setCargos]       = useState([])
@@ -61,6 +63,9 @@ export default function Page() {
   const [filtroHasta,  setFiltroHasta]  = useState('')
 
   const [detalle, setDetalle] = useState(null)  // entrega enriquecida
+
+  // Volver a lista inicial al hacer clic en el módulo desde el sidebar
+  useEffect(() => { setDetalle(null) }, [location.key])
 
   // ── Carga ─────────────────────────────────────────────────────────────────
   const cargar = async () => {

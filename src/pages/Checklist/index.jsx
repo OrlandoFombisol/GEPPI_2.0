@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import { CheckSquare, Plus, Download, QrCode } from 'lucide-react'
 import { checklistDB, vehiculoDB, empresaDB } from '@/db'
 import { formatearFecha }                     from '@/utils/dates'
@@ -43,6 +44,7 @@ const COLUMNAS = [
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function Page() {
+  const location = useLocation()
   const [checklists, setChecklists] = useState([])
   const [vehiculos,  setVehiculos]  = useState([])
   const [empresas,   setEmpresas]   = useState([])
@@ -56,6 +58,9 @@ export default function Page() {
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
   const [filtroDesde,   setFiltroDesde]   = useState('')
   const [filtroHasta,   setFiltroHasta]   = useState('')
+
+  // Volver a lista inicial al hacer clic en el módulo desde el sidebar
+  useEffect(() => { setVistaForm(false); setDetalle(null) }, [location.key])
 
   useEffect(() => { cargar() }, [])
 

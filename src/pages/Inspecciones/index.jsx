@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Search, AlertTriangle, CheckCircle2, ClipboardCheck, ChevronRight, TrendingUp, MinusCircle } from 'lucide-react'
 import { inspeccionDB, empresaDB, planTrabajoDB } from '@/db'
@@ -113,6 +114,7 @@ function ChipTipo({ meta, active, onClick }) {
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function Inspecciones() {
+  const location = useLocation()
   const { user }  = useUser()
   const [inspecciones,  setInspecciones]  = useState([])
   const [empresas,      setEmpresas]      = useState([])
@@ -123,6 +125,9 @@ export default function Inspecciones() {
   const [filtroTipo,    setFiltroTipo]    = useState('')
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
   const [busqueda,      setBusqueda]      = useState('')
+
+  // Volver a lista inicial al hacer clic en el módulo desde el sidebar
+  useEffect(() => { setVistaForm(false); setDetalleId(null) }, [location.key])
 
   const cargarDatos = async () => {
     setCargando(true)
