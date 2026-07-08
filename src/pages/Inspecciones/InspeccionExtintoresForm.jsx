@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, Save, CheckCircle2, XCircle, MinusCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp, Flame } from 'lucide-react'
 import { extintorDB, inspeccionDB } from '@/db'
 import { BackButton } from '@/components/ui'
+import { useUser } from '@/contexts/UserContext'
 
 const ITEMS_EXTINTOR = [
   { id: 'A', label: 'Está ubicado en el lugar designado y accesible' },
@@ -27,12 +28,13 @@ const RES = [
 const IDLE = 'border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
 
 export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onGuardado, onCancelar }) {
+  const { user } = useUser()
   const [empresaId,    setEmpresaId]    = useState('')
   const [sede,         setSede]         = useState('')
   const [sedeNueva,    setSedeNueva]    = useState('')
   const [sedes,        setSedes]        = useState([])
   const [mes,          setMes]          = useState(new Date().toISOString().slice(0, 7))
-  const [inspector,    setInspector]    = useState('')
+  const [inspector,    setInspector]    = useState(user?.nombre || '')
   const [extintores,   setExtintores]   = useState([])
   const [cargandoCat,  setCargandoCat]  = useState(false)
   const [resultados,   setResultados]   = useState({})
@@ -48,12 +50,9 @@ export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onG
 
   // Load sedes when empresa changes
   useEffect(() => {
-    setSedes([]); setSede(''); setExtintores([]); setResultados({})
+    setSedes([]); setSede(''); setSedeNueva(''); setExtintores([]); setResultados({})
     if (!empresaId) return
-    extintorDB.getSedes(Number(empresaId)).then(s => {
-      setSedes(s)
-      if (s.length === 0) setSede('__nueva__')
-    }).catch(console.error)
+    extintorDB.getSedes(Number(empresaId)).then(setSedes).catch(console.error)
   }, [empresaId])
 
   // Load extintores when sede changes
@@ -222,22 +221,17 @@ export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onG
 
             <div>
               <label className="text-xs font-semibold text-slate-600 block mb-1">Sede / Punto de inspección <span className="text-red-500">*</span></label>
-              {sedes.length > 0 ? (
-                <select value={sede} onChange={e => setSede(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400">
-                  <option value="">Seleccionar sede…</option>
-                  {sedes.map(s => <option key={s} value={s}>{s}</option>)}
-                  <option value="__nueva__">+ Nueva sede</option>
-                </select>
-              ) : (
-                <input type="text" value={sedeNueva} onChange={e => setSedeNueva(e.target.value)}
-                  placeholder="Nombre de la sede (ej. Granabastos)"
-                  className="w-full h-9 px-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400" />
-              )}
+              <select value={sede} onChange={e => { setSede(e.target.value); setSedeNueva('') }}
+                className="w-full h-9 px-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400">
+                <option value="">Seleccionar sede…</option>
+                {sedes.map(s => <option key={s} value={s}>{s}</option>)}
+                <option value="__nueva__">+ Nueva sede…</option>
+              </select>
               {sede === '__nueva__' && (
                 <input type="text" value={sedeNueva} onChange={e => setSedeNueva(e.target.value)}
-                  placeholder="Nombre de la nueva sede"
-                  className="w-full h-9 px-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400 mt-1.5" />
+                  placeholder="Nombre de la nueva sede (ej. Granabastos)"
+                  autoFocus
+                  className="w-full h-9 px-2.5 rounded-lg border border-red-200 bg-red-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 mt-1.5" />
               )}
             </div>
 
@@ -248,17 +242,17 @@ export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onG
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Inspector <span className="text-red-500">*</span></label>
-              <input type="text" value={inspector} onChange={e => setInspector(e.target.value)}
-                placeholder="Nombre del inspector"
-                className="w-full h-9 px-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400" />
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Inspector</label>
+              <div className="w-full h-9 px-2.5 rounded-lg border border-slate-100 bg-slate-50 text-sm text-slate-700 font-medium flex items-center">
+                {inspector || '—'}
+              </div>
             </div>
 
           </div>
         </div>
 
         {/* Catálogo */}
-        {(sedeActual || sede === '__nueva__') && (
+        {sedeActual && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <button onClick={() => setShowCatalogo(p => !p)}
               className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50 transition-colors">
