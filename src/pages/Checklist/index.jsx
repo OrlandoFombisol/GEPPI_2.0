@@ -90,7 +90,7 @@ export default function Page() {
       const totalOk = items.filter(i => i.estado === 'OK' || i.estado === 'BUENO').length
       return {
         ...c,
-        vehiculoPlaca:   veh?.placa || '—',
+        vehiculoPlaca:   veh?.placa || c.vehiculoPlaca || '—',
         empresaNombre:   empMap[c.empresaId] || '—',
         totalItems:      items.length,
         totalOk,
