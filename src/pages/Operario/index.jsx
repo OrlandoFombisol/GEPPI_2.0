@@ -86,6 +86,7 @@ export default function Operario() {
   const [conductor,    setConductor]    = useState(null)
   const [cargando,     setCargando]     = useState(false)
   const [errorAuth,    setErrorAuth]    = useState('')
+  const [errorEmpresas, setErrorEmpresas] = useState(false)
 
   // Checklist state
   const today = new Date().toISOString().slice(0, 10)
@@ -102,30 +103,37 @@ export default function Operario() {
   // Cargar empresas al montar
   useEffect(() => {
     supabase.from('empresa').select('id, razon_social').eq('estado', 'ACTIVO').order('razon_social')
-      .then(({ data }) => setEmpresas(data || []))
+      .then(({ data, error }) => {
+        if (error || !data?.length) setErrorEmpresas(true)
+        setEmpresas(data || [])
+      })
   }, [])
 
-  // Cargar trabajadores al seleccionar empresa
+  // Cargar trabajadores al seleccionar empresa — solo conductores (cargo 64=CONDUCTOR I, 65=CONDUCTOR II)
   useEffect(() => {
     if (!empresaId) { setTrabajadores([]); setTrabajadorId(''); return }
     supabase.from('trabajador').select('id, nombres, apellidos')
-      .eq('empresa_id', Number(empresaId)).eq('estado', 'ACTIVO').order('apellidos')
+      .eq('empresa_id', Number(empresaId)).eq('estado', 'ACTIVO')
+      .in('cargo_id', [64, 65])
+      .order('apellidos')
       .then(({ data }) => setTrabajadores(data || []))
   }, [empresaId])
 
   const validar = async () => {
-    if (!empresaId)    return setErrorAuth('Selecciona tu empresa.')
-    if (!trabajadorId) return setErrorAuth('Selecciona tu nombre.')
+    if (!empresaId)     return setErrorAuth('Selecciona tu empresa.')
+    if (!trabajadorId)  return setErrorAuth('Selecciona tu nombre.')
     if (!cedula.trim()) return setErrorAuth('Ingresa tu número de cédula.')
     setErrorAuth(''); setCargando(true)
     try {
-      const { data, error } = await supabase.rpc('validar_conductor', {
-        p_empresa_id:    Number(empresaId),
-        p_trabajador_id: Number(trabajadorId),
-        p_cedula:        cedula.trim(),
-      })
-      if (error) throw error
-      if (!data?.valido) {
+      const { data, error } = await supabase
+        .from('trabajador')
+        .select('id, nombres, apellidos, cargo_id')
+        .eq('id', Number(trabajadorId))
+        .eq('empresa_id', Number(empresaId))
+        .eq('cedula', String(cedula.trim()))
+        .in('cargo_id', [64, 65])
+        .single()
+      if (error || !data) {
         setErrorAuth('Cédula incorrecta. Verifica tus datos o consulta con tu SISO.')
         return
       }
@@ -202,7 +210,7 @@ export default function Operario() {
   const empresaNombre = empresas.find(e => e.id === Number(empresaId))?.razon_social || ''
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col" style={{ colorScheme: 'light', color: '#0f172a' }}>
 
       {/* Header compacto */}
       <div style={{ background: 'linear-gradient(135deg,#083278,#1B62CC)', padding: '14px 20px' }}
@@ -243,10 +251,16 @@ export default function Operario() {
                     Empresa <span className="text-red-500">*</span>
                   </label>
                   <select value={empresaId} onChange={e => { setEmpresaId(e.target.value); setTrabajadorId('') }}
-                    className="w-full h-11 px-3 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    className="w-full h-11 px-3 rounded-xl border border-slate-300 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{ colorScheme: 'light' }}>
                     <option value="">Seleccionar empresa…</option>
-                    {empresas.map(e => <option key={e.id} value={e.id}>{e.razon_social}</option>)}
+                    {empresas.map(e => <option key={e.id} value={e.id} style={{ color: '#0f172a', background: '#fff' }}>{e.razon_social}</option>)}
                   </select>
+                  {errorEmpresas && (
+                    <p className="text-xs text-red-600 mt-1">
+                      No se pudo cargar la lista. Verifica tu conexión e intenta recargar la página.
+                    </p>
+                  )}
                 </div>
 
                 {/* Nombre */}
@@ -256,10 +270,11 @@ export default function Operario() {
                   </label>
                   <select value={trabajadorId} onChange={e => setTrabajadorId(e.target.value)}
                     disabled={!empresaId}
-                    className="w-full h-11 px-3 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50">
+                    className="w-full h-11 px-3 rounded-xl border border-slate-300 text-sm bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    style={{ colorScheme: 'light' }}>
                     <option value="">{empresaId ? 'Seleccionar nombre…' : 'Primero selecciona empresa'}</option>
                     {trabajadores.map(t => (
-                      <option key={t.id} value={t.id}>{t.apellidos} {t.nombres}</option>
+                      <option key={t.id} value={t.id} style={{ color: '#0f172a', background: '#fff' }}>{t.apellidos} {t.nombres}</option>
                     ))}
                   </select>
                 </div>

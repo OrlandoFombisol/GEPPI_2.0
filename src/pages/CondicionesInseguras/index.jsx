@@ -35,6 +35,8 @@ const EMPTY = {
   estado: 'IDENTIFICADA',
   fechaIdentificacion: new Date().toISOString().slice(0, 10),
   fechaIntervencion: '',
+  fechaSeguimiento: '',
+  fechaCierre: '',
   observaciones: '',
 }
 
@@ -129,8 +131,8 @@ function CondicionModal({ form, set, empresas, onClose, onSave, saving, errs }) 
             </div>
           </div>
 
-          {/* Estado + Fechas */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Estado + Fecha identificación */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">Estado *</label>
               <select value={form.estado}
@@ -146,10 +148,28 @@ function CondicionModal({ form, set, empresas, onClose, onSave, saving, errs }) 
                 className={INP}
               />
             </div>
+          </div>
+
+          {/* Fechas de seguimiento, intervención y cierre */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Fecha seguimiento</label>
+              <input type="date" value={form.fechaSeguimiento || ''}
+                onChange={e => set(f => ({ ...f, fechaSeguimiento: e.target.value }))}
+                className={INP}
+              />
+            </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">Fecha intervención</label>
-              <input type="date" value={form.fechaIntervencion}
+              <input type="date" value={form.fechaIntervencion || ''}
                 onChange={e => set(f => ({ ...f, fechaIntervencion: e.target.value }))}
+                className={INP}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Fecha cierre</label>
+              <input type="date" value={form.fechaCierre || ''}
+                onChange={e => set(f => ({ ...f, fechaCierre: e.target.value }))}
                 className={INP}
               />
             </div>
@@ -256,7 +276,14 @@ export default function Page() {
     if (Object.keys(e).length) { setErrs(e); return }
     setSaving(true)
     try {
-      const { id, ...data } = modal.form
+      const { id, ...raw } = modal.form
+      // Convertir fechas vacías a null para PostgreSQL
+      const data = {
+        ...raw,
+        fechaIntervencion: raw.fechaIntervencion || null,
+        fechaSeguimiento:  raw.fechaSeguimiento  || null,
+        fechaCierre:       raw.fechaCierre        || null,
+      }
       if (id) await condicionesDB.update(id, data)
       else    await condicionesDB.create(data)
       await cargar()
@@ -405,7 +432,7 @@ export default function Page() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                {['Descripción', 'Empresa', 'Tipo', 'Área', 'Prioridad', 'Estado', 'F. Identificación', ''].map(h => (
+                {['Descripción', 'Empresa', 'Tipo', 'Área', 'Prioridad', 'Estado', 'F. Identificación', 'F. Seguimiento', 'F. Cierre', 'Observaciones', ''].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
@@ -416,14 +443,14 @@ export default function Page() {
               {loading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <tr key={i}>
-                    <td colSpan={8} className="px-4 py-3">
+                    <td colSpan={11} className="px-4 py-3">
                       <div className="h-5 bg-slate-100 rounded animate-pulse" />
                     </td>
                   </tr>
                 ))
               ) : filtradas.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
+                  <td colSpan={11} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center">
                         <ShieldAlert size={22} className="text-orange-500" strokeWidth={1.5} />
@@ -464,6 +491,17 @@ export default function Page() {
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
                       {c.fechaIdentificacion || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+                      {c.fechaSeguimiento || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
+                      {c.fechaCierre
+                        ? <span className="text-green-700 font-semibold">{c.fechaCierre}</span>
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-500 max-w-[180px]">
+                      <p className="line-clamp-2" title={c.observaciones}>{c.observaciones || '—'}</p>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">

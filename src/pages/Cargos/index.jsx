@@ -17,6 +17,22 @@ function descargarFormatoCargos(empresas) {
   XLSX.writeFile(wb, 'formato_importacion_cargos.xlsx')
 }
 
+function exportarListadoCargos(cargos) {
+  const fecha = new Date().toISOString().slice(0, 10)
+  const filas = cargos.map(c => ({
+    'Nombre del cargo': c.nombre,
+    'Nivel':            c.nivel || '—',
+    'Estado':           c.estado,
+    'Trabajadores':     c._trabajadores,
+    'EPP asignados':    c._eppAsignados,
+  }))
+  const wb = XLSX.utils.book_new()
+  const ws = XLSX.utils.json_to_sheet(filas)
+  ws['!cols'] = [{ wch: 44 }, { wch: 22 }, { wch: 12 }, { wch: 14 }, { wch: 14 }]
+  XLSX.utils.book_append_sheet(wb, ws, 'Cargos')
+  XLSX.writeFile(wb, `Listado_Cargos_${fecha}.xlsx`)
+}
+
 // ─── Modal de confirmación eliminación ───────────────────────────────────────
 function ConfirmarEliminar({ cargo, onConfirmar, onClose, saving }) {
   return (
@@ -170,7 +186,11 @@ export default function Page() {
             {activos} activo{activos !== 1 ? 's' : ''} · {inactivos} inactivo{inactivos !== 1 ? 's' : ''} · {cargos.length} total.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="secondary" iconLeft={Download} onClick={() => exportarListadoCargos(cargos)}
+            disabled={cargos.length === 0}>
+            Exportar listado
+          </Button>
           <Button variant="secondary" iconLeft={Download} onClick={() => descargarFormatoCargos(empresas)}>
             Descargar formato
           </Button>

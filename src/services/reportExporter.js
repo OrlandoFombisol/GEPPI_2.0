@@ -1,7 +1,6 @@
 import * as XLSX from 'xlsx'
-import db                    from '@/db/schema'
 import {
-  trabajadorDB, entregaDB, inventarioDB,
+  trabajadorDB, entregaDB, inventarioDB, detalleEntregaDB,
   eppDB, cargoDB, sedeDB, empresaDB, asignacionDB,
 } from '@/db'
 import { calcularEstadoEPP, formatearFecha, formatearFechaHora } from '@/utils/dates'
@@ -45,7 +44,7 @@ async function cargarBase() {
     await Promise.all([
       trabajadorDB.getAll(),
       entregaDB.getAll(),
-      db.detalleEntrega.toArray(),
+      detalleEntregaDB.getAll(),
       inventarioDB.getAll(),
       eppDB.getAll(),
       cargoDB.getAll(),
