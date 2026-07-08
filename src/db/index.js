@@ -801,6 +801,14 @@ export const checklistDB = {
       supabase.from('checklist_preoperacional').select('*').order('id', { ascending: false }))
     return manyFromDB(data)
   },
+  async getList() {
+    // Like getAll() but excludes foto_base64 / firma_base64 for fast list rendering
+    const data = await q('checklist.getList',
+      supabase.from('checklist_preoperacional')
+        .select('id, empresa_id, vehiculo_id, vehiculo_placa, conductor_nombre, conductor_cedula, fecha, items, observacion_general, foto_fecha, usuario_id, created_at')
+        .order('id', { ascending: false }))
+    return manyFromDB(data)
+  },
   async getById(id) {
     const data = await one('checklist.getById',
       supabase.from('checklist_preoperacional').select('*').eq('id', id).single())

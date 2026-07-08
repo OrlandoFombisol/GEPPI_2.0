@@ -1,7 +1,8 @@
-import { useState, useRef } from 'react'
-import { Camera, CheckCircle2, XCircle, AlertCircle, ChevronLeft } from 'lucide-react'
-import { checklistDB, vehiculoDB, alertaDB } from '@/db'
-import { Button, AlertBanner }       from '@/components/ui'
+import { useState, useEffect, useRef } from 'react'
+import { Camera, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import { checklistDB, vehiculoDB } from '@/db'
+import { supabase }                from '@/lib/supabase'
+import { Button, AlertBanner, BackButton } from '@/components/ui'
 
 // ─── Ítems del checklist preoperacional ──────────────────────────────────────
 
@@ -92,6 +93,8 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
   const [empresaId,       setEmpresaId]       = useState('')
   const [vehiculoId,      setVehiculoId]      = useState('')
   const [vehiculoPlaca,   setVehiculoPlaca]   = useState('')
+  const [conductores,     setConductores]     = useState([])
+  const [conductorId,     setConductorId]     = useState('')
   const [conductorNombre, setConductorNombre] = useState('')
   const [conductorCedula, setConductorCedula] = useState('')
   const [items,           setItems]           = useState({})
@@ -102,6 +105,33 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
   const [error,           setError]           = useState('')
 
   const fotoRef = useRef()
+
+  // Cargar conductores al cambiar empresa
+  useEffect(() => {
+    setConductores([])
+    setConductorId('')
+    setVehiculoId('')
+    if (!empresaId) return
+    supabase.from('trabajador')
+      .select('id, nombres, apellidos, cedula')
+      .eq('empresa_id', Number(empresaId))
+      .eq('estado', 'ACTIVO')
+      .in('cargo_id', [64, 65])
+      .order('apellidos')
+      .then(({ data }) => setConductores(data || []))
+  }, [empresaId])
+
+  const seleccionarConductor = (id) => {
+    setConductorId(id)
+    const c = conductores.find(t => t.id === Number(id))
+    if (c) {
+      setConductorNombre(`${c.nombres} ${c.apellidos}`)
+      setConductorCedula(c.cedula || '')
+    } else {
+      setConductorNombre('')
+      setConductorCedula('')
+    }
+  }
 
   // Seleccionar empresa autocompleta vehículos asociados
   const vehiculosFiltrados = empresaId
@@ -171,7 +201,7 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
         })
       }
 
-      const checklistId = await checklistDB.create({
+      await checklistDB.create({
         fecha,
         empresaId:        Number(empresaId),
         vehiculoId:       finalVehiculoId,
@@ -183,25 +213,6 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
         fotoBase64,
         fotoFecha:        new Date().toISOString(),
       })
-
-      // Generar alerta interna si hay ítems en estado MALO o REGULAR
-      const itemsMalo    = itemsArray.filter(i => i.estado === 'MALO')
-      const itemsRegular = itemsArray.filter(i => i.estado === 'REGULAR')
-      if (itemsMalo.length > 0 || itemsRegular.length > 0) {
-        const vehiculoInfo = vehiculoPlaca.trim()
-          ? `Vehículo ${vehiculoPlaca.trim().toUpperCase()}`
-          : conductorNombre.trim()
-        const detalle = [
-          itemsMalo.length    > 0 ? `MALO: ${itemsMalo.map(i => i.label).join(', ')}`       : '',
-          itemsRegular.length > 0 ? `REGULAR: ${itemsRegular.map(i => i.label).join(', ')}` : '',
-        ].filter(Boolean).join(' · ')
-        await alertaDB.create({
-          tipo:        'CHECKLIST_HALLAZGO',
-          nivel:       itemsMalo.length > 0 ? 'CRITICO' : 'WARNING',
-          mensaje:     `${vehiculoInfo} | Conductor: ${conductorNombre.trim()} | ${detalle}`,
-          referenciaId: String(checklistId),
-        })
-      }
 
       onGuardado()
     } catch (err) {
@@ -218,11 +229,9 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
     <div className="p-3 sm:p-6 max-w-3xl mx-auto space-y-5">
 
       {/* Cabecera */}
-      <div className="flex items-center gap-3">
-        <button onClick={onCancelar} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
-          <ChevronLeft size={20} className="text-slate-600" />
-        </button>
-        <div>
+      <div className="flex items-start gap-3 flex-wrap">
+        <BackButton onClick={onCancelar} />
+        <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold text-slate-900">Checklist Preoperacional</h1>
           <p className="text-sm text-slate-500">Inspección diaria de vehículo — SST</p>
         </div>
@@ -261,29 +270,64 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
             />
           </div>
 
-          <div>
-            <label className="text-xs font-medium text-slate-600 block mb-1">Nombre del conductor <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              value={conductorNombre}
-              onChange={e => setConductorNombre(e.target.value)}
-              placeholder="Nombre completo"
-              className="w-full h-9 px-3 rounded-lg border border-slate-300 text-sm bg-white
-                         focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+          <div className="sm:col-span-2">
+            <label className="text-xs font-medium text-slate-600 block mb-1">
+              Conductor <span className="text-red-500">*</span>
+            </label>
+            {empresaId && conductores.length > 0 ? (
+              <select
+                value={conductorId}
+                onChange={e => seleccionarConductor(e.target.value)}
+                className="w-full h-9 px-3 rounded-lg border border-slate-300 text-sm bg-white
+                           focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">Seleccionar conductor…</option>
+                {conductores.map(c => (
+                  <option key={c.id} value={c.id}>{c.apellidos} {c.nombres}</option>
+                ))}
+                <option value="__manual__">— Digitar manualmente —</option>
+              </select>
+            ) : (
+              <p className="text-xs text-slate-400 italic h-9 flex items-center">
+                {empresaId ? 'Sin conductores registrados para esta empresa' : 'Selecciona primero una empresa'}
+              </p>
+            )}
           </div>
 
-          <div>
-            <label className="text-xs font-medium text-slate-600 block mb-1">Cédula del conductor <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              value={conductorCedula}
-              onChange={e => setConductorCedula(e.target.value)}
-              placeholder="12345678"
-              className="w-full h-9 px-3 rounded-lg border border-slate-300 text-sm bg-white
-                         focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
+          {(!empresaId || conductores.length === 0 || conductorId === '__manual__') && (
+            <div>
+              <label className="text-xs font-medium text-slate-600 block mb-1">Nombre del conductor <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                value={conductorNombre}
+                onChange={e => setConductorNombre(e.target.value)}
+                placeholder="Nombre completo"
+                className="w-full h-9 px-3 rounded-lg border border-slate-300 text-sm bg-white
+                           focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          )}
+
+          {(!empresaId || conductores.length === 0 || conductorId === '__manual__') && (
+            <div>
+              <label className="text-xs font-medium text-slate-600 block mb-1">Cédula del conductor <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                value={conductorCedula}
+                onChange={e => setConductorCedula(e.target.value)}
+                placeholder="12345678"
+                className="w-full h-9 px-3 rounded-lg border border-slate-300 text-sm bg-white
+                           focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          )}
+
+          {conductorId && conductorId !== '__manual__' && (
+            <div className="sm:col-span-2 p-3 bg-blue-50 rounded-lg border border-blue-200 text-sm text-slate-700">
+              <span className="font-semibold">{conductorNombre}</span>
+              <span className="text-slate-500 ml-2">· CC {conductorCedula}</span>
+            </div>
+          )}
 
           <div>
             <label className="text-xs font-medium text-slate-600 block mb-1">Vehículo (placa)</label>
@@ -407,9 +451,7 @@ export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCance
 
       {/* Acciones */}
       <div className="flex justify-between pb-6">
-        <Button variant="secondary" onClick={onCancelar} disabled={guardando}>
-          Cancelar
-        </Button>
+        <BackButton onClick={onCancelar} disabled={guardando} />
         <Button onClick={guardar} loading={guardando}>
           Guardar checklist
         </Button>

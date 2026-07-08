@@ -1,8 +1,8 @@
-import { useState }         from 'react'
-import { CheckCircle2 }     from 'lucide-react'
-import { entregaDB }        from '@/db'
-import { useUser }          from '@/contexts/UserContext'
-import { Button }           from '@/components/ui'
+import { useState }               from 'react'
+import { CheckCircle2 }           from 'lucide-react'
+import { entregaDB }              from '@/db'
+import { useUser }                from '@/contexts/UserContext'
+import { Button, BackButton }     from '@/components/ui'
 import BotonPDF             from '@/components/pdf/BotonPDF'
 import Paso1Trabajador      from './pasos/Paso1Trabajador'
 import Paso2EPP             from './pasos/Paso2EPP'
@@ -207,13 +207,8 @@ export default function NuevaEntrega({ onCancelar, onCompletado }) {
           </div>
 
           {/* Botón cancelar */}
-          <div className="mt-4 text-center">
-            <button
-              onClick={onCancelar}
-              className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              Cancelar y volver al listado
-            </button>
+          <div className="mt-4">
+            <BackButton onClick={onCancelar} label="Cancelar y volver al listado" />
           </div>
         </>
       )}
