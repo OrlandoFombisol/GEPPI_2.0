@@ -47,6 +47,11 @@ export default function Page() {
   const [sedes,      setSedes]      = useState([])
   const [loading,    setLoading]    = useState(true)
 
+  // Volver a lista inicial al hacer clic en el módulo desde el sidebar
+  useEffect(() => {
+    setVista(location.pathname.endsWith('/nueva') ? 'nueva' : 'lista')
+  }, [location.key])
+
   useEffect(() => {
     if (vista === 'lista') cargar()
   }, [vista])
