@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
-import { CheckSquare, Plus, Download, QrCode } from 'lucide-react'
+import { CheckSquare, Plus, Download, QrCode, Loader2 } from 'lucide-react'
 import { checklistDB, vehiculoDB, empresaDB } from '@/db'
 import { formatearFecha }                     from '@/utils/dates'
 import { Badge, Button, Card, DataTable, Modal }             from '@/components/ui'
@@ -50,9 +50,10 @@ export default function Page() {
   const [empresas,   setEmpresas]   = useState([])
   const [loading,    setLoading]    = useState(true)
 
-  const [vistaForm,    setVistaForm]    = useState(false)
-  const [detalle,      setDetalle]      = useState(null)
-  const [verQr,        setVerQr]        = useState(false)
+  const [vistaForm,       setVistaForm]       = useState(false)
+  const [detalle,         setDetalle]         = useState(null)
+  const [cargandoDetalle, setCargandoDetalle] = useState(false)
+  const [verQr,           setVerQr]           = useState(false)
 
   // Filtros
   const [filtroEmpresa, setFiltroEmpresa] = useState('')
@@ -64,11 +65,23 @@ export default function Page() {
 
   useEffect(() => { cargar() }, [])
 
+  async function abrirDetalle(row) {
+    setCargandoDetalle(true)
+    try {
+      const full = await checklistDB.getById(row.id)
+      setDetalle(full ? { ...row, fotoBase64: full.fotoBase64, firmaBase64: full.firmaBase64 } : row)
+    } catch {
+      setDetalle(row)
+    } finally {
+      setCargandoDetalle(false)
+    }
+  }
+
   async function cargar() {
     setLoading(true)
     try {
       const [chks, vehs, emps] = await Promise.all([
-        checklistDB.getAll(),
+        checklistDB.getList(),
         vehiculoDB.getAll(),
         empresaDB.getAll(),
       ])
@@ -95,7 +108,7 @@ export default function Page() {
         totalItems:      items.length,
         totalOk,
         tieneObservacion: Boolean(c.observacionGeneral || items.some(i => i.observacion)),
-        tieneFoto:       Boolean(c.fotoBase64),
+        tieneFoto:       Boolean(c.fotoFecha || c.fotoBase64),
       }
     })
   }, [checklists, vehiculos, empresas])
@@ -125,6 +138,14 @@ export default function Page() {
     ws['!cols'] = Array(8).fill({ wch: 22 })
     XLSX.utils.book_append_sheet(wb, ws, 'Checklist')
     XLSX.writeFile(wb, `CHECKLIST_PREOPERACIONAL_${new Date().toISOString().slice(0,10)}.xlsx`)
+  }
+
+  if (cargandoDetalle) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={28} className="animate-spin text-primary-600" />
+      </div>
+    )
   }
 
   if (vistaForm) {
@@ -225,7 +246,7 @@ export default function Page() {
           searchPlaceholder="Buscar por conductor, placa, empresa…"
           emptyTitle="Sin registros"
           emptyMessage="Haz clic en 'Nuevo checklist' para registrar la primera inspección."
-          onView={row => setDetalle(row)}
+          onView={row => abrirDetalle(row)}
           className="p-4"
         />
       </Card>

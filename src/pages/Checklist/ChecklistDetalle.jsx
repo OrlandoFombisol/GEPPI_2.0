@@ -1,6 +1,6 @@
-import { ChevronLeft, CheckCircle2, XCircle, AlertCircle, MinusCircle } from 'lucide-react'
-import { formatearFecha } from '@/utils/dates'
-import { Badge, Button }  from '@/components/ui'
+import { CheckCircle2, XCircle, AlertCircle, MinusCircle } from 'lucide-react'
+import { formatearFecha }            from '@/utils/dates'
+import { Badge, Button, BackButton } from '@/components/ui'
 
 const ESTADO_ICON = {
   BUENO:   { Icon: CheckCircle2, cls: 'text-green-600'  },
@@ -31,11 +31,9 @@ export default function ChecklistDetalle({ checklist, vehiculos, empresas, onVol
     <div className="p-3 sm:p-6 max-w-3xl mx-auto space-y-5">
 
       {/* Cabecera */}
-      <div className="flex items-center gap-3">
-        <button onClick={onVolver} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
-          <ChevronLeft size={20} className="text-slate-600" />
-        </button>
-        <div>
+      <div className="flex items-start gap-3 flex-wrap">
+        <BackButton onClick={onVolver} />
+        <div className="flex-1 min-w-0">
           <h1 className="text-xl font-bold text-slate-900">Detalle del Checklist</h1>
           <p className="text-sm text-slate-500">{formatearFecha(checklist.fecha)}</p>
         </div>
@@ -146,7 +144,7 @@ export default function ChecklistDetalle({ checklist, vehiculos, empresas, onVol
       )}
 
       <div className="pb-6">
-        <Button variant="secondary" onClick={onVolver}>← Volver al listado</Button>
+        <BackButton onClick={onVolver} />
       </div>
     </div>
   )

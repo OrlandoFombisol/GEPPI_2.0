@@ -11,6 +11,7 @@ export { default as StatsCard }   from './StatsCard'
 export { default as AlertBanner } from './AlertBanner'
 export { default as StatusDot }   from './StatusDot'
 export { default as EmptyState }  from './EmptyState'
+export { default as BackButton }  from './BackButton'
 
 // FormField y sus sub-componentes de input
 export {
