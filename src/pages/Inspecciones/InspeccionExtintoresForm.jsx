@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Save, CheckCircle2, XCircle, MinusCircle, Loader2, AlertTriangle, ChevronDown, ChevronUp, Flame } from 'lucide-react'
-import { extintorDB, inspeccionDB } from '@/db'
+import { extintorDB, inspeccionDB, sedeDB } from '@/db'
 import { BackButton } from '@/components/ui'
 import { useUser } from '@/contexts/UserContext'
 
@@ -30,8 +30,7 @@ const IDLE = 'border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
 export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onGuardado, onCancelar }) {
   const { user } = useUser()
   const [empresaId,    setEmpresaId]    = useState('')
-  const [sede,         setSede]         = useState('')
-  const [sedeNueva,    setSedeNueva]    = useState('')
+  const [sedeNombre,   setSedeNombre]   = useState('')
   const [sedes,        setSedes]        = useState([])
   const [mes,          setMes]          = useState(new Date().toISOString().slice(0, 7))
   const [inspector,    setInspector]    = useState(user?.nombre || '')
@@ -46,53 +45,46 @@ export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onG
   const [nuevaUbic,    setNuevaUbic]    = useState('')
   const [agregando,    setAgregando]    = useState(false)
 
-  const sedeActual = sede === '__nueva__' ? sedeNueva.trim() : sede
-
   // Load sedes when empresa changes
   useEffect(() => {
-    setSedes([]); setSede(''); setSedeNueva(''); setExtintores([]); setResultados({})
+    setSedes([]); setSedeNombre(''); setExtintores([]); setResultados({})
     if (!empresaId) return
-    extintorDB.getSedes(Number(empresaId)).then(setSedes).catch(console.error)
+    sedeDB.getPorEmpresa(Number(empresaId)).then(setSedes).catch(console.error)
   }, [empresaId])
 
   // Load extintores when sede changes
   useEffect(() => {
     setExtintores([]); setResultados({})
-    const s = sede === '__nueva__' ? sedeNueva.trim() : sede
-    if (!empresaId || !s) return
+    if (!empresaId || !sedeNombre) return
     setCargandoCat(true)
-    extintorDB.getBySede(Number(empresaId), s)
+    extintorDB.getBySede(Number(empresaId), sedeNombre)
       .then(list => {
         setExtintores(list)
         setShowCatalogo(list.length === 0)
       })
       .catch(console.error)
       .finally(() => setCargandoCat(false))
-  }, [sede, sedeNueva, empresaId])
+  }, [sedeNombre, empresaId])
 
   const recargarExtintores = async () => {
-    if (!empresaId || !sedeActual) return
-    const list = await extintorDB.getBySede(Number(empresaId), sedeActual)
+    if (!empresaId || !sedeNombre) return
+    const list = await extintorDB.getBySede(Number(empresaId), sedeNombre)
     setExtintores(list)
   }
 
   const agregarExtintor = async () => {
-    if (!sedeActual || !empresaId) return
+    if (!sedeNombre || !empresaId) return
     setAgregando(true)
     try {
       const nextNum = extintores.length > 0 ? Math.max(...extintores.map(e => e.numero)) + 1 : 1
       await extintorDB.create({
         empresaId: Number(empresaId),
-        sede: sedeActual,
+        sede: sedeNombre,
         numero: nextNum,
         tipo: nuevoTipo.trim() || null,
         ubicacion: nuevaUbic.trim() || null,
       })
       await recargarExtintores()
-      if (!sedes.includes(sedeActual)) {
-        setSedes(prev => [...new Set([...prev, sedeActual])].sort())
-        setSede(sedeActual); setSedeNueva('')
-      }
       setNuevoTipo(''); setNuevaUbic(''); setShowAddExt(false)
     } catch (e) { console.error(e) } finally { setAgregando(false) }
   }
@@ -124,8 +116,8 @@ export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onG
   const handleGuardar = async () => {
     setError('')
     if (!empresaId)           return setError('Selecciona la empresa.')
-    if (!sedeActual)          return setError('Indica la sede o punto de inspección.')
-    if (!inspector.trim())    return setError('Ingresa el nombre del inspector.')
+    if (!sedeNombre)          return setError('Selecciona la sede.')
+    if (!inspector.trim())    return setError('El inspector no está definido.')
     if (extintores.length === 0) return setError('El catálogo está vacío. Agrega al menos un extintor.')
     for (const ext of extintores) {
       for (const item of ITEMS_EXTINTOR) {
@@ -151,7 +143,7 @@ export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onG
       await inspeccionDB.create({
         tipo:      'EXTINTORES',
         empresaId: Number(empresaId),
-        sede:      sedeActual,
+        sede:      sedeNombre,
         fecha:     mes + '-15',
         inspector: inspector.trim(),
         items:     itemsArray,
@@ -220,18 +212,15 @@ export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onG
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-600 block mb-1">Sede / Punto de inspección <span className="text-red-500">*</span></label>
-              <select value={sede} onChange={e => { setSede(e.target.value); setSedeNueva('') }}
-                className="w-full h-9 px-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400">
-                <option value="">Seleccionar sede…</option>
-                {sedes.map(s => <option key={s} value={s}>{s}</option>)}
-                <option value="__nueva__">+ Nueva sede…</option>
+              <label className="text-xs font-semibold text-slate-600 block mb-1">Sede <span className="text-red-500">*</span></label>
+              <select value={sedeNombre} onChange={e => setSedeNombre(e.target.value)}
+                className="w-full h-9 px-2.5 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-400"
+                disabled={!empresaId}>
+                <option value="">{empresaId ? 'Seleccionar sede…' : 'Primero selecciona la empresa'}</option>
+                {sedes.map(s => <option key={s.id} value={s.nombre}>{s.nombre}</option>)}
               </select>
-              {sede === '__nueva__' && (
-                <input type="text" value={sedeNueva} onChange={e => setSedeNueva(e.target.value)}
-                  placeholder="Nombre de la nueva sede (ej. Granabastos)"
-                  autoFocus
-                  className="w-full h-9 px-2.5 rounded-lg border border-red-200 bg-red-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 mt-1.5" />
+              {empresaId && sedes.length === 0 && (
+                <p className="text-xs text-amber-600 mt-1">Esta empresa no tiene sedes registradas. Regístralas en el módulo de Empresas.</p>
               )}
             </div>
 
@@ -252,7 +241,7 @@ export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onG
         </div>
 
         {/* Catálogo */}
-        {sedeActual && (
+        {sedeNombre && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <button onClick={() => setShowCatalogo(p => !p)}
               className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-slate-50 transition-colors">
@@ -261,9 +250,7 @@ export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onG
                 <p className="text-sm font-bold text-slate-800">Catálogo de extintores</p>
                 <p className="text-xs text-slate-500">
                   {cargandoCat ? 'Cargando…'
-                    : sedeActual
-                    ? `${extintores.length} extintor${extintores.length !== 1 ? 'es' : ''} registrados${sedeActual ? ` — ${sedeActual}` : ''}`
-                    : 'Indica la sede para cargar el catálogo'}
+                    : `${extintores.length} extintor${extintores.length !== 1 ? 'es' : ''} registrados — ${sedeNombre}`}
                 </p>
               </div>
               {showCatalogo ? <ChevronUp size={15} className="text-slate-400" /> : <ChevronDown size={15} className="text-slate-400" />}
