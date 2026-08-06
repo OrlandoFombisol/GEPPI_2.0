@@ -89,9 +89,6 @@ export default function Page() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="success" size="sm">
-            ✓ Build 06/08/2026 16:06
-          </Badge>
           {datos?.ultimaActualizacion && (
             <span className="text-xs text-slate-400">
               Actualizado: {format(datos.ultimaActualizacion, 'HH:mm', { locale: es })}
