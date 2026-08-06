@@ -733,11 +733,14 @@ export default function Page() {
     if (Object.keys(e).length) { setErrs(e); return }
     setSaving(true)
     try {
-      const { id, ...data } = modal.form
+      const { id, ...raw } = modal.form
+      const data = { ...raw, empresaId: raw.empresaId || null }
       if (id) await indicadorDB.update(id, data)
       else    await indicadorDB.create(data)
       await cargar()
       setModal({ open: false, form: { ...EMPTY_IND } })
+    } catch (err) {
+      alert(`Error al guardar: ${err.message}`)
     } finally { setSaving(false) }
   }
 

@@ -99,11 +99,14 @@ export const cargoDB = {
     return manyFromDB(data)
   },
   async create(data) {
-    const row = await one('cargo.create', supabase.from('cargo').insert({ ...toDB(data), estado: 'ACTIVO' }).select('id').single())
+    const nombre = data.nombre != null ? String(data.nombre).toUpperCase().trim() : data.nombre
+    const row = await one('cargo.create', supabase.from('cargo').insert({ ...toDB(data), nombre, estado: 'ACTIVO' }).select('id').single())
     return row?.id
   },
   async update(id, data) {
-    await q('cargo.update', supabase.from('cargo').update(toDB(data)).eq('id', id))
+    const cambios = toDB(data)
+    if (data.nombre != null) cambios.nombre = String(data.nombre).toUpperCase().trim()
+    await q('cargo.update', supabase.from('cargo').update(cambios).eq('id', id))
   },
   async remove(id) {
     await q('cargo.remove', supabase.from('cargo').delete().eq('id', id))
