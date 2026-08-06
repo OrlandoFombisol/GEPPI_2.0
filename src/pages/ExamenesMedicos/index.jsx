@@ -30,11 +30,11 @@ const EMPTY_FORM = {
   trabajadorId: '',
   empresaId: '',
   tipo: 'INGRESO',
-  fechaExamen: new Date().toISOString().slice(0, 10),
+  fechaRealizacion: new Date().toISOString().slice(0, 10),
   fechaVencimiento: '',
   aptitudLaboral: 'APTO',
   restricciones: '',
-  medico: '',
+  entidadRealizadora: '',
   observaciones: '',
 }
 
@@ -134,11 +134,11 @@ function ExamenModal({ form, set, trabajadores, empresas, onClose, onSave, savin
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">Fecha del examen *</label>
-              <input type="date" value={form.fechaExamen}
-                onChange={e => set(f => ({ ...f, fechaExamen: e.target.value }))}
-                className={`${INP} ${errs.fechaExamen ? 'border-red-400' : ''}`}
+              <input type="date" value={form.fechaRealizacion}
+                onChange={e => set(f => ({ ...f, fechaRealizacion: e.target.value }))}
+                className={`${INP} ${errs.fechaRealizacion ? 'border-red-400' : ''}`}
               />
-              {errs.fechaExamen && <p className="text-xs text-red-500 mt-0.5">{errs.fechaExamen}</p>}
+              {errs.fechaRealizacion && <p className="text-xs text-red-500 mt-0.5">{errs.fechaRealizacion}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -169,8 +169,8 @@ function ExamenModal({ form, set, trabajadores, empresas, onClose, onSave, savin
           {/* Médico */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">Nombre del médico</label>
-            <input value={form.medico}
-              onChange={e => set(f => ({ ...f, medico: e.target.value }))}
+            <input value={form.entidadRealizadora}
+              onChange={e => set(f => ({ ...f, entidadRealizadora: e.target.value }))}
               placeholder="Dr. / Dra. nombre completo"
               className={INP}
             />
@@ -373,7 +373,7 @@ export default function Page() {
   const validate = (f) => {
     const e = {}
     if (!f.trabajadorId)   e.trabajadorId = 'Seleccione un trabajador'
-    if (!f.fechaExamen)    e.fechaExamen  = 'Ingrese la fecha del examen'
+    if (!f.fechaRealizacion) e.fechaRealizacion = 'Ingrese la fecha del examen'
     if ((f.aptitudLaboral === 'APTO_CON_RESTRICCIONES' || f.aptitudLaboral === 'NO_APTO') && !f.restricciones?.trim())
       e.restricciones = 'Describa las restricciones'
     return e
@@ -394,6 +394,8 @@ export default function Page() {
       else    await examenMedicoDB.create(data)
       await cargar()
       setModal({ open: false, form: { ...EMPTY_FORM } })
+    } catch (err) {
+      alert(`Error al guardar: ${err.message}`)
     } finally { setSaving(false) }
   }
 
@@ -548,7 +550,7 @@ export default function Page() {
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-600 max-w-[120px] truncate whitespace-nowrap">{empresa}</td>
                     <td className="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">{tipoLabel}</td>
-                    <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{ex.fechaExamen || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{ex.fechaRealizacion || '—'}</td>
                     <td className="px-4 py-3 text-xs whitespace-nowrap">
                       {ex.fechaVencimiento
                         ? <span className={dias !== null && dias <= 0 ? 'text-red-600 font-semibold' : dias !== null && dias <= 30 ? 'text-yellow-600 font-semibold' : 'text-slate-500'}>

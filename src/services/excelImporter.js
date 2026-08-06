@@ -154,7 +154,7 @@ function parseMatrizCargos(ws, eppsParsed) {
 
   for (let i = headerEppIdx + 1; i < data.length; i++) {
     const row         = data[i]
-    const cargoNombre = normalizar(row[0])
+    const cargoNombre = normalizar(row[0]).toUpperCase()
 
     if (!cargoNombre) continue
     // Omitir filas de encabezado de sección (toda la fila restante vacía)

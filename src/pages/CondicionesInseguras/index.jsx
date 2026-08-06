@@ -288,6 +288,8 @@ export default function Page() {
       else    await condicionesDB.create(data)
       await cargar()
       setModal({ open: false, form: { ...EMPTY } })
+    } catch (err) {
+      alert(`Error al guardar: ${err.message}`)
     } finally { setSaving(false) }
   }
 
