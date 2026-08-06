@@ -44,3 +44,4 @@ geppi_backup_*.json
 *.xls
 
 .vercel
+.env*

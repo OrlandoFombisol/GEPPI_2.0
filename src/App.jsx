@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout    from '@/components/layout/Layout'
 import NotFound  from '@/pages/NotFound'
+import DeployBadge from '@/components/DeployBadge'
 import { initSeedData } from '@/db/seed'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { UserProvider, useUser }  from '@/contexts/UserContext'
@@ -168,6 +169,7 @@ export default function App() {
   return (
     <ThemeProvider>
     <UserProvider>
+    <DeployBadge />
     <BrowserRouter>
       <Routes>
 
