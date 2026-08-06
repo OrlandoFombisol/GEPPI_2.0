@@ -108,6 +108,19 @@ export default function Header({ onMenuClick }) {
         {/* Acciones */}
         <div className="flex items-center gap-2">
 
+          {/* Build actual — confirmación de deploy, visible en todas las pantallas */}
+          <span
+            className="hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-1 rounded-md flex-shrink-0"
+            style={{
+              background: 'rgba(57,181,74,0.12)',
+              color: '#1f7a2c',
+              border: '1px solid rgba(57,181,74,0.35)',
+            }}
+            title="Fecha y hora del último deploy a producción"
+          >
+            ✓ Build 06/08/2026 16:12
+          </span>
+
           {/* Bell */}
           <Link to="/alertas"
             className="relative p-2 rounded-xl transition-all duration-150"
