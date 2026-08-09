@@ -117,6 +117,23 @@ export const cargoDB = {
 //  EPP
 // ─────────────────────────────────────────────────────────────────────────────
 
+async function subirFichaTecnicaEpp(eppId, file) {
+  if (file.type !== 'application/pdf')
+    throw new Error('La ficha técnica debe ser un archivo PDF.')
+  if (file.size > 5 * 1024 * 1024)
+    throw new Error(`El PDF supera el límite de 5 MB (pesa ${(file.size / 1024 / 1024).toFixed(1)} MB).`)
+
+  const nombreSeguro = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '')
+  const path = `epp-fichas/${eppId}/${Date.now()}_${nombreSeguro}`
+
+  const { error: upErr } = await supabase.storage
+    .from('evidencias').upload(path, file, { contentType: file.type, upsert: false })
+  if (upErr) throw new Error('Error al subir la ficha técnica: ' + upErr.message)
+
+  await q('epp.update.ficha', supabase.from('epp')
+    .update({ ficha_storage_path: path, ficha_nombre: file.name }).eq('id', eppId))
+}
+
 export const eppDB = {
   async getAll() {
     const data = await q('epp.getAll', supabase.from('epp').select('*').order('item'))
@@ -131,13 +148,20 @@ export const eppDB = {
     return manyFromDB(data)
   },
   async create(data) {
-    const { fichaTecnicaBlob, fichaTecnicaNombre, ...rest } = data
+    const { fichaTecnicaFile, ...rest } = data
     const row = await one('epp.create', supabase.from('epp').insert({ ...toDB(rest), estado: 'ACTIVO' }).select('id').single())
+    if (fichaTecnicaFile && row?.id) await subirFichaTecnicaEpp(row.id, fichaTecnicaFile)
     return row?.id
   },
   async update(id, data) {
-    const { fichaTecnicaBlob, fichaTecnicaNombre, ...rest } = data
+    const { fichaTecnicaFile, ...rest } = data
     await q('epp.update', supabase.from('epp').update(toDB(rest)).eq('id', id))
+    if (fichaTecnicaFile) await subirFichaTecnicaEpp(id, fichaTecnicaFile)
+  },
+  async getFichaUrl(storagePath) {
+    const { data, error } = await supabase.storage.from('evidencias').createSignedUrl(storagePath, 3600)
+    if (error) throw new Error('No se pudo obtener el enlace de la ficha técnica.')
+    return data.signedUrl
   },
   async remove(id) {
     await q('epp.remove', supabase.from('epp').delete().eq('id', id))
@@ -1103,6 +1127,64 @@ export const itemEvaluacionDB = {
   async removeByEvaluacion(evaluacionId) {
     await q('itemEval.removeByEvaluacion',
       supabase.from('item_evaluacion').delete().eq('evaluacion_id', evaluacionId))
+  },
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  EVIDENCIAS — SG-SST 0312 (por ítem, separadas por empresa)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const EVID_ITEM_TIPOS   = ['image/jpeg', 'image/png', 'application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']
+const EVID_ITEM_MAXBYTES = 5 * 1024 * 1024
+const EVID_ITEM_MAXPOR   = 5
+
+export const evidenciaItemSgsstDB = {
+  async getByItem(evaluacionId, codigo) {
+    const data = await q('evidenciaItem.getByItem',
+      supabase.from('evidencia_item_sgsst')
+        .select('*').eq('evaluacion_id', evaluacionId).eq('codigo', codigo)
+        .order('fecha_subida', { ascending: false }))
+    return manyFromDB(data)
+  },
+  async upload(evaluacionId, codigo, empresaId, file, usuarioId) {
+    if (!EVID_ITEM_TIPOS.includes(file.type))
+      throw new Error('Tipo no permitido. Solo JPG, PNG, PDF o Excel.')
+    if (file.size > EVID_ITEM_MAXBYTES)
+      throw new Error(`El archivo supera el límite de 5 MB (pesa ${(file.size / 1024 / 1024).toFixed(1)} MB).`)
+
+    const { count } = await supabase
+      .from('evidencia_item_sgsst').select('id', { count: 'exact', head: true })
+      .eq('evaluacion_id', evaluacionId).eq('codigo', codigo)
+    if ((count || 0) >= EVID_ITEM_MAXPOR)
+      throw new Error(`Límite alcanzado: máximo ${EVID_ITEM_MAXPOR} evidencias por ítem.`)
+
+    const nombreSeguro = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '')
+    const path = `sgsst0312/${empresaId}/${evaluacionId}/${codigo}/${Date.now()}_${nombreSeguro}`
+
+    const { error: upErr } = await supabase.storage
+      .from('evidencias').upload(path, file, { contentType: file.type, upsert: false })
+    if (upErr) throw new Error('Error al subir el archivo: ' + upErr.message)
+
+    const tipo = file.type.includes('image') ? 'imagen'
+               : file.type.includes('pdf')   ? 'pdf'
+               : 'excel'
+
+    await q('evidenciaItem.create',
+      supabase.from('evidencia_item_sgsst').insert({
+        evaluacion_id: evaluacionId, codigo, empresa_id: empresaId,
+        nombre: file.name, tipo, storage_path: path, tamaño_bytes: file.size,
+        usuario_id: usuarioId || null,
+      }))
+  },
+  async getUrl(storagePath) {
+    const { data, error } = await supabase.storage
+      .from('evidencias').createSignedUrl(storagePath, 3600)
+    if (error) throw new Error('No se pudo obtener el enlace del archivo.')
+    return data.signedUrl
+  },
+  async remove(id, storagePath) {
+    await supabase.storage.from('evidencias').remove([storagePath])
+    await q('evidenciaItem.remove', supabase.from('evidencia_item_sgsst').delete().eq('id', id))
   },
 }
 

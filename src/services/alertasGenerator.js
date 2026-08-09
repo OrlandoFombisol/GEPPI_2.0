@@ -1,4 +1,4 @@
-import { entregaDB, inventarioDB, eppDB, alertaDB, detalleEntregaDB } from '@/db'
+import { entregaDB, inventarioDB, eppDB, alertaDB, detalleEntregaDB, condicionesDB } from '@/db'
 import { TIPO_ALERTA, NIVEL_ALERTA }     from '@/constants'
 import { calcularEstadoEPP, diasParaVencimiento } from '@/utils/dates'
 
@@ -6,6 +6,8 @@ import { calcularEstadoEPP, diasParaVencimiento } from '@/utils/dates'
  * Escanea la base de datos y crea alertas para:
  *  - EPP vencidos o próximos a vencer por trabajador
  *  - Ítems de inventario agotados o bajo mínimo
+ *  - Actos/condiciones inseguras de prioridad alta sin intervenir, o con
+ *    fecha de seguimiento vencida
  *
  * Utiliza `alertaDB.existeAlertaActiva` para no crear duplicados.
  * @returns {Promise<number>} cantidad de alertas nuevas generadas
@@ -81,6 +83,40 @@ export async function generarAlertas() {
           sedeId:      inv.sedeId,
           referenciaId: inv.id,
           mensaje:     `Stock bajo: "${nombre}" (${inv.stockActual} u. / mín ${inv.stockMinimo ?? 5})`,
+        })
+        nuevas++
+      }
+    }
+  }
+
+  // ── 3. Actos / condiciones inseguras ──────────────────────────────────────
+  const condiciones = await condicionesDB.getAll()
+
+  for (const c of (condiciones || [])) {
+    if (c.estado === 'INTERVENIDA') continue
+
+    const diasSeguimiento = diasParaVencimiento(c.fechaSeguimiento)
+    const seguimientoVencido = diasSeguimiento !== null && diasSeguimiento < 0
+
+    if (seguimientoVencido) {
+      const yaExiste = await alertaDB.existeAlertaActiva(TIPO_ALERTA.ACTO_SEGUIMIENTO_VENCIDO, c.id)
+      if (!yaExiste) {
+        await alertaDB.create({
+          tipo:        TIPO_ALERTA.ACTO_SEGUIMIENTO_VENCIDO,
+          nivel:       c.prioridad === 'ALTA' ? NIVEL_ALERTA.CRITICO : NIVEL_ALERTA.WARNING,
+          referenciaId: c.id,
+          mensaje:     `Seguimiento vencido hace ${Math.abs(diasSeguimiento)} día(s): "${c.descripcion}"`,
+        })
+        nuevas++
+      }
+    } else if (c.prioridad === 'ALTA' && c.estado === 'IDENTIFICADA') {
+      const yaExiste = await alertaDB.existeAlertaActiva(TIPO_ALERTA.ACTO_PRIORIDAD_ALTA, c.id)
+      if (!yaExiste) {
+        await alertaDB.create({
+          tipo:        TIPO_ALERTA.ACTO_PRIORIDAD_ALTA,
+          nivel:       NIVEL_ALERTA.CRITICO,
+          referenciaId: c.id,
+          mensaje:     `Condición insegura de prioridad ALTA sin intervenir: "${c.descripcion}"`,
         })
         nuevas++
       }

@@ -164,6 +164,8 @@ export default function Page() {
         : await eppDB.create(data)
       setModal(null)
       await cargar()
+    } catch (err) {
+      alert(`Error al guardar: ${err.message}`)
     } finally {
       setSaving(false)
     }

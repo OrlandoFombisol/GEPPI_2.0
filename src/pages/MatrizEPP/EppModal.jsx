@@ -40,18 +40,10 @@ export default function EppModal({ epp, onSave, onClose, saving = false }) {
   })
 
   const [fichaPDF, setFichaPDF] = useState(null)
-  const tienePDFActual = isEdit && Boolean(epp?.fichaTecnicaBlob)
+  const tienePDFActual = isEdit && Boolean(epp?.fichaStoragePath)
 
   async function handleSubmitConArchivo(data) {
-    let fileData = {}
-    if (fichaPDF) {
-      const buffer = await fichaPDF.arrayBuffer()
-      fileData = {
-        fichaTecnicaBlob:   buffer,
-        fichaTecnicaNombre: fichaPDF.name,
-      }
-    }
-    onSave({ ...data, ...fileData })
+    onSave({ ...data, ...(fichaPDF ? { fichaTecnicaFile: fichaPDF } : {}) })
   }
 
   return (
@@ -195,7 +187,7 @@ export default function EppModal({ epp, onSave, onClose, saving = false }) {
           <div className="sm:col-span-2">
             {tienePDFActual && !fichaPDF && (
               <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-2">
-                Ya hay una ficha técnica cargada: <strong>{epp.fichaTecnicaNombre || 'ficha.pdf'}</strong>.
+                Ya hay una ficha técnica cargada: <strong>{epp.fichaNombre || 'ficha.pdf'}</strong>.
                 Sube un nuevo archivo para reemplazarla.
               </p>
             )}

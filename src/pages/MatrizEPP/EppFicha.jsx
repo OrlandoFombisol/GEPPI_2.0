@@ -1,5 +1,7 @@
-import { Shield, Clock, Trash2, AlertTriangle, FileText, Tag, ExternalLink, Package } from 'lucide-react'
+import { useState } from 'react'
+import { Shield, Clock, Trash2, AlertTriangle, FileText, Tag, ExternalLink, Package, Loader2 } from 'lucide-react'
 import { Modal, Badge, Button }  from '@/components/ui'
+import { eppDB } from '@/db'
 import { vidaUtilLabel, vidaUtilVariant } from './utils'
 
 function Bloque({ titulo, icon: Icon, children, span2 = false }) {
@@ -20,27 +22,24 @@ function Divider() {
   return <div className="sm:col-span-2 border-t border-slate-100" />
 }
 
-function abrirPDF(blob, nombre) {
-  try {
-    const b = new Blob([blob], { type: 'application/pdf' })
-    const url = URL.createObjectURL(b)
-    const win = window.open(url, '_blank')
-    if (!win) {
-      const a = document.createElement('a')
-      a.href = url
-      a.download = nombre || 'ficha-tecnica.pdf'
-      a.click()
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 30000)
-  } catch {
-    alert('No se pudo abrir la ficha técnica.')
-  }
-}
-
 export default function EppFicha({ epp, onEdit, onClose }) {
+  const [abriendo, setAbriendo] = useState(false)
+
   if (!epp) return null
 
-  const tienePDF = Boolean(epp.fichaTecnicaBlob)
+  const tienePDF = Boolean(epp.fichaStoragePath)
+
+  async function abrirPDF() {
+    setAbriendo(true)
+    try {
+      const url = await eppDB.getFichaUrl(epp.fichaStoragePath)
+      window.open(url, '_blank')
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setAbriendo(false)
+    }
+  }
 
   return (
     <Modal
@@ -55,9 +54,9 @@ export default function EppFicha({ epp, onEdit, onClose }) {
           </span>
           <div className="flex gap-2">
             {tienePDF && (
-              <Button variant="outline" onClick={() => abrirPDF(epp.fichaTecnicaBlob, epp.fichaTecnicaNombre)}
+              <Button variant="outline" onClick={abrirPDF} disabled={abriendo}
                 className="flex items-center gap-1.5">
-                <ExternalLink size={13} />
+                {abriendo ? <Loader2 size={13} className="animate-spin" /> : <ExternalLink size={13} />}
                 Ver PDF
               </Button>
             )}
@@ -168,12 +167,12 @@ export default function EppFicha({ epp, onEdit, onClose }) {
                   <FileText size={18} className="text-blue-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-blue-800">Ficha técnica PDF disponible</p>
-                    <p className="text-xs text-blue-600 truncate">{epp.fichaTecnicaNombre || 'ficha-tecnica.pdf'}</p>
+                    <p className="text-xs text-blue-600 truncate">{epp.fichaNombre || 'ficha-tecnica.pdf'}</p>
                   </div>
                   <Button variant="outline" size="sm"
-                    onClick={() => abrirPDF(epp.fichaTecnicaBlob, epp.fichaTecnicaNombre)}
+                    onClick={abrirPDF} disabled={abriendo}
                     className="flex items-center gap-1.5 flex-shrink-0">
-                    <ExternalLink size={13} /> Abrir
+                    {abriendo ? <Loader2 size={13} className="animate-spin" /> : <ExternalLink size={13} />} Abrir
                   </Button>
                 </div>
               </div>

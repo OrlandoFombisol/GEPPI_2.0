@@ -33,6 +33,8 @@ const TIPO_LABEL   = {
   [TIPO_ALERTA.STOCK_AGOTADO]:     'Stock agotado',
   [TIPO_ALERTA.ENTREGA_PENDIENTE]: 'Entrega pendiente',
   [TIPO_ALERTA.FIRMA_PENDIENTE]:   'Firma pendiente',
+  [TIPO_ALERTA.ACTO_PRIORIDAD_ALTA]:      'Acto inseguro — prioridad alta',
+  [TIPO_ALERTA.ACTO_SEGUIMIENTO_VENCIDO]: 'Acto inseguro — seguimiento vencido',
 }
 
 // ─── Tarjeta especial: Checklist hallazgo ─────────────────────────────────────

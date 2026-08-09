@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Briefcase, Plus, AlertTriangle, Download } from 'lucide-react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { Briefcase, Plus, AlertTriangle, Download, Upload } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { cargoDB, trabajadorDB, asignacionDB, empresaDB } from '@/db'
 import { Badge, Button, Card, DataTable, Modal } from '@/components/ui'
@@ -15,6 +15,22 @@ function descargarFormatoCargos(empresas) {
   ws['!cols'] = [{ wch: 40 }, { wch: 60 }]
   XLSX.utils.book_append_sheet(wb, ws, 'Cargos')
   XLSX.writeFile(wb, 'formato_importacion_cargos.xlsx')
+}
+
+// Lee la primera columna ("cargo") del formato de importación y devuelve
+// los nombres no vacíos, sin encabezado.
+async function parseCargosDesdeExcel(file) {
+  const buffer = await file.arrayBuffer()
+  const wb     = XLSX.read(buffer, { type: 'array' })
+  const ws     = wb.Sheets[wb.SheetNames[0]]
+  const filas  = XLSX.utils.sheet_to_json(ws, { header: 1 })
+
+  const nombres = filas
+    .slice(1) // saltar encabezado
+    .map(fila => String(fila[0] ?? '').trim())
+    .filter(Boolean)
+
+  return [...new Set(nombres)]
 }
 
 function exportarListadoCargos(cargos) {
@@ -100,6 +116,8 @@ export default function Page() {
 
   const [modal,     setModal]     = useState(null)   // null | {} | cargo
   const [confirmar, setConfirmar] = useState(null)   // null | cargo enriquecido
+  const [importando, setImportando] = useState(false)
+  const fileInputRef = useRef(null)
 
   // ── Carga ─────────────────────────────────────────────────────────────────
   useEffect(() => { cargar() }, [])
@@ -168,6 +186,38 @@ export default function Page() {
     }
   }
 
+  // ── Importar desde Excel ─────────────────────────────────────────────────
+  const handleImportar = async (file) => {
+    if (!file) return
+    setImportando(true)
+    try {
+      const nombres = await parseCargosDesdeExcel(file)
+      if (nombres.length === 0) {
+        alert('El archivo no tiene nombres de cargo en la primera columna.')
+        return
+      }
+      const existentes = new Set(cargos.map(c => c.nombre.toUpperCase().trim()))
+      let creados = 0, omitidos = 0, errores = 0
+      for (const nombre of nombres) {
+        if (existentes.has(nombre.toUpperCase().trim())) { omitidos++; continue }
+        try {
+          await cargoDB.create({ nombre })
+          existentes.add(nombre.toUpperCase().trim())
+          creados++
+        } catch {
+          errores++
+        }
+      }
+      await cargar()
+      alert(`Importación completada: ${creados} cargo(s) nuevo(s), ${omitidos} ya existían${errores ? `, ${errores} con error` : ''}.`)
+    } catch (err) {
+      alert(`Error al leer el archivo: ${err.message}`)
+    } finally {
+      setImportando(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   // ── Stats ─────────────────────────────────────────────────────────────────
   const activos   = useMemo(() => cargos.filter(c => c.estado === 'ACTIVO').length,   [cargos])
   const inactivos = useMemo(() => cargos.filter(c => c.estado === 'INACTIVO').length, [cargos])
@@ -193,6 +243,17 @@ export default function Page() {
           </Button>
           <Button variant="secondary" iconLeft={Download} onClick={() => descargarFormatoCargos(empresas)}>
             Descargar formato
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={e => handleImportar(e.target.files[0])}
+          />
+          <Button variant="secondary" iconLeft={Upload} loading={importando}
+            onClick={() => fileInputRef.current?.click()}>
+            Importar Excel
           </Button>
           <Button iconLeft={Plus} onClick={() => setModal({})}>
             Nuevo cargo

@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Stethoscope, Plus, Pencil, Trash2, X, Save, Settings2 } from 'lucide-react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { Stethoscope, Plus, Pencil, Trash2, X, Save, Settings2, Upload, Download } from 'lucide-react'
 import { examenMedicoDB, configuracionAlertaDB, trabajadorDB, empresaDB } from '@/db'
+import { parsearExamenesMedicos, descargarFormatoExamenesMedicos } from '@/services/importarExamenesMedicos'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -59,6 +60,147 @@ function diasRestantes(fechaVenc) {
   const hoy  = new Date(); hoy.setHours(0, 0, 0, 0)
   const venc = new Date(fechaVenc + 'T00:00:00')
   return Math.round((venc - hoy) / 86400000)
+}
+
+// ─── Modal importar Excel ──────────────────────────────────────────────────────
+
+function ModalImportarExamenes({ trabajadores, onImportados, onClose }) {
+  const [resultado,    setResultado]    = useState(null)
+  const [cargando,     setCargando]     = useState(false)
+  const [guardando,    setGuardando]    = useState(false)
+  const [error,        setError]        = useState('')
+  const [errorGuardar, setErrorGuardar] = useState('')
+  const fileRef = useRef()
+
+  const procesarArchivo = async (e) => {
+    const archivo = e.target.files[0]
+    if (!archivo) return
+    setCargando(true)
+    setError('')
+    try {
+      const res = await parsearExamenesMedicos(archivo, { trabajadores })
+      setResultado(res)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCargando(false)
+    }
+  }
+
+  const confirmarImportacion = async () => {
+    if (!resultado) return
+    setGuardando(true)
+    setErrorGuardar('')
+    try {
+      let creados = 0, errores = 0
+      for (const ex of resultado.examenes) {
+        const { _cedula, _nombreTrabajador, ...data } = ex
+        try {
+          await examenMedicoDB.create(data)
+          creados++
+        } catch {
+          errores++
+        }
+      }
+      onImportados({ creados, errores })
+    } catch (err) {
+      setErrorGuardar(`Error inesperado: ${err.message}`)
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style={{ background: 'rgba(0,0,0,0.55)' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-5 border-b">
+          <h2 className="text-base font-bold text-slate-900">Importar exámenes médicos desde Excel</h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">
+            <p className="font-semibold mb-1">Columnas esperadas (tolerantes al orden):</p>
+            <p>Cédula · Tipo · Fecha Realización · Fecha Vencimiento · Aptitud · Restricciones · Entidad Realizadora · Observaciones</p>
+            <p className="mt-1 text-blue-600">El trabajador debe existir en el sistema — se busca por número de cédula.</p>
+          </div>
+
+          <div className="flex gap-2">
+            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={procesarArchivo} className="hidden" />
+            <button onClick={() => fileRef.current?.click()} disabled={cargando}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-sm font-semibold rounded-xl transition-colors disabled:opacity-50">
+              <Upload size={14} />
+              {cargando ? 'Procesando…' : 'Seleccionar archivo Excel'}
+            </button>
+            <button onClick={descargarFormatoExamenesMedicos}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-sm font-semibold rounded-xl transition-colors">
+              <Download size={14} />
+              Descargar formato
+            </button>
+          </div>
+
+          {error        && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">{error}</div>}
+          {errorGuardar && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">{errorGuardar}</div>}
+
+          {resultado && (
+            <div className="space-y-3">
+              {resultado.errores.map((e, i) => (
+                <div key={i} className="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-700">• {e}</div>
+              ))}
+              {resultado.advertencias.map((a, i) => (
+                <div key={i} className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">• {a}</div>
+              ))}
+              {resultado.examenes.length > 0 && (
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 border-b">
+                    {resultado.examenes.length} examen(es) a importar
+                  </div>
+                  <div className="max-h-52 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                          {['Cédula', 'Trabajador', 'Tipo', 'Fecha', 'Aptitud'].map(h => (
+                            <th key={h} className="px-3 py-2 text-left text-slate-500 font-semibold">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {resultado.examenes.map((ex, i) => (
+                          <tr key={i} className="border-b border-slate-50 last:border-0">
+                            <td className="px-3 py-2 font-mono text-slate-600">{ex._cedula}</td>
+                            <td className="px-3 py-2 text-slate-800">{ex._nombreTrabajador}</td>
+                            <td className="px-3 py-2 text-slate-500">{TIPOS_EXAMEN.find(t => t.value === ex.tipo)?.label}</td>
+                            <td className="px-3 py-2 text-slate-500">{ex.fechaRealizacion}</td>
+                            <td className="px-3 py-2 text-slate-500">{APTITUDES.find(a => a.value === ex.aptitudLaboral)?.label}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 p-5 border-t">
+          <button onClick={onClose} disabled={guardando}
+            className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50">
+            Cancelar
+          </button>
+          {resultado?.examenes?.length > 0 && (
+            <button onClick={confirmarImportacion} disabled={guardando}
+              className="flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50">
+              {guardando ? 'Guardando…' : `Importar ${resultado.examenes.length} examen(es)`}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
@@ -307,6 +449,7 @@ export default function Page() {
   const [loading,       setLoading]       = useState(true)
   const [activeTab,     setActiveTab]     = useState('TODOS')
   const [modal,         setModal]         = useState({ open: false, form: { ...EMPTY_FORM } })
+  const [importar,      setImportar]      = useState(false)
   const [delId,         setDelId]         = useState(null)
   const [saving,        setSaving]        = useState(false)
   const [savingCfg,     setSavingCfg]     = useState(false)
@@ -439,11 +582,18 @@ export default function Page() {
             Ingreso · Periódicos · Retiro · Restricciones médicas
           </p>
         </div>
-        <button onClick={abrirNueva}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
-          <Plus size={15} />
-          Registrar examen
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setImportar(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-sm font-semibold rounded-xl transition-colors">
+            <Upload size={15} />
+            Importar Excel
+          </button>
+          <button onClick={abrirNueva}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm">
+            <Plus size={15} />
+            Registrar examen
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -616,6 +766,19 @@ export default function Page() {
           onSave={handleSave}
           saving={saving}
           errs={errs}
+        />
+      )}
+
+      {/* Modal importar Excel */}
+      {importar && (
+        <ModalImportarExamenes
+          trabajadores={trabajadores}
+          onImportados={async ({ creados, errores }) => {
+            setImportar(false)
+            await cargar()
+            alert(`Importación completada: ${creados} examen(es) creado(s)${errores ? `, ${errores} con error` : ''}.`)
+          }}
+          onClose={() => setImportar(false)}
         />
       )}
 

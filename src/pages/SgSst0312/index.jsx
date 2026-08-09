@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { ShieldCheck, Plus, Download, ChevronDown, ChevronRight, Info } from 'lucide-react'
+import { ShieldCheck, Plus, Download, ChevronDown, ChevronRight, Info, Paperclip } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { evaluacionSGSSTDB, itemEvaluacionDB, empresaDB } from '@/db'
+import { useUser } from '@/contexts/UserContext'
+import EvidenciaItemPanel from './EvidenciaItemPanel'
 import {
   ITEMS_0312, ESTANDARES, PHVA_COLOR, ESTADO_INFO, calcPuntaje,
 } from './items'
@@ -29,12 +31,11 @@ function nivelCalificacion(total) {
 
 // ─── Fila del checklist ───────────────────────────────────────────────────────
 
-function FilaItem({ item, dato, onChange, debounceMs = 400 }) {
+function FilaItem({ item, dato, onChange, onAbrirEvidencias, debounceMs = 400 }) {
   const [localResponsable,  setLocalR] = useState(dato?.responsable         || '')
   const [localFecha,        setLocalF] = useState(dato?.fechaVerificacion   || '')
   const [localObs,          setLocalO] = useState(dato?.observaciones       || '')
   const timerR = useRef(); const timerO = useRef()
-  const [expanded, setExpanded] = useState(false)
 
   useEffect(() => { setLocalR(dato?.responsable       || '') }, [dato?.responsable])
   useEffect(() => { setLocalF(dato?.fechaVerificacion || '') }, [dato?.fechaVerificacion])
@@ -137,11 +138,18 @@ function FilaItem({ item, dato, onChange, debounceMs = 400 }) {
         </td>
         {/* Observaciones */}
         <td className="px-2 py-2 w-40">
-          <input value={localObs}
-            onChange={e => { setLocalO(e.target.value); clearTimeout(timerO.current); timerO.current = setTimeout(() => emit({ observaciones: e.target.value }), debounceMs) }}
-            placeholder="Observaciones"
-            className="w-full h-7 px-2 rounded border border-slate-200 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary-400 bg-transparent"
-          />
+          <div className="flex items-center gap-1">
+            <input value={localObs}
+              onChange={e => { setLocalO(e.target.value); clearTimeout(timerO.current); timerO.current = setTimeout(() => emit({ observaciones: e.target.value }), debounceMs) }}
+              placeholder="Observaciones"
+              className="w-full h-7 px-2 rounded border border-slate-200 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary-400 bg-transparent"
+            />
+            <button type="button" onClick={() => onAbrirEvidencias(item)}
+              title="Evidencias adjuntas"
+              className="flex-shrink-0 p-1 rounded text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
+              <Paperclip size={13} />
+            </button>
+          </div>
         </td>
         {/* Ref. legal */}
         <td className="px-2 py-2 text-[10px] text-slate-400 whitespace-nowrap w-24">{item.refLegal}</td>
@@ -153,7 +161,7 @@ function FilaItem({ item, dato, onChange, debounceMs = 400 }) {
 
 // ─── Grupo por estándar ───────────────────────────────────────────────────────
 
-function GrupoEstandar({ estandar, items, itemsDatos, onChange }) {
+function GrupoEstandar({ estandar, items, itemsDatos, onChange, onAbrirEvidencias }) {
   const [collapsed, setCollapsed] = useState(false)
 
   const totalPeso     = items.reduce((s, i) => s + i.peso, 0)
@@ -200,6 +208,7 @@ function GrupoEstandar({ estandar, items, itemsDatos, onChange }) {
           item={item}
           dato={itemsDatos[item.codigo]}
           onChange={onChange}
+          onAbrirEvidencias={onAbrirEvidencias}
         />
       ))}
     </>
@@ -209,6 +218,7 @@ function GrupoEstandar({ estandar, items, itemsDatos, onChange }) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function Page() {
+  const { user } = useUser()
   const [empresas,      setEmpresas]      = useState([])
   const [selEmpresaId,  setSelEmpresaId]  = useState('')
   const [selAño,        setSelAño]        = useState(AÑO_BASE)
@@ -216,6 +226,7 @@ export default function Page() {
   const [itemsDatos,    setItemsDatos]    = useState({})
   const [loading,       setLoading]       = useState(false)
   const [creating,      setCreating]      = useState(false)
+  const [itemEvidencias, setItemEvidencias] = useState(null) // null | item
 
   // Cargar empresas al arrancar
   useEffect(() => {
@@ -265,10 +276,14 @@ export default function Page() {
   const handleItemChange = useCallback(async (codigo, patch) => {
     if (!evaluacion?.id) return
     setItemsDatos(prev => ({ ...prev, [codigo]: { ...(prev[codigo] || {}), ...patch } }))
-    await itemEvaluacionDB.upsert(evaluacion.id, codigo, {
-      ...(itemsDatos[codigo] || {}),
-      ...patch,
-    })
+    try {
+      await itemEvaluacionDB.upsert(evaluacion.id, codigo, {
+        ...(itemsDatos[codigo] || {}),
+        ...patch,
+      })
+    } catch (err) {
+      alert(`Error al guardar el ítem: ${err.message}`)
+    }
   }, [evaluacion, itemsDatos])
 
   // Calcular puntajes
@@ -518,6 +533,7 @@ export default function Page() {
                       items={ITEMS_0312.filter(i => i.estandar === est)}
                       itemsDatos={itemsDatos}
                       onChange={handleItemChange}
+                      onAbrirEvidencias={setItemEvidencias}
                     />
                   ))}
                 </tbody>
@@ -541,6 +557,18 @@ export default function Page() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Panel de evidencias por ítem */}
+      {itemEvidencias && evaluacion && (
+        <EvidenciaItemPanel
+          evaluacionId={evaluacion.id}
+          codigo={itemEvidencias.codigo}
+          empresaId={Number(selEmpresaId)}
+          itemLabel={itemEvidencias.item}
+          usuarioId={user?.id}
+          onClose={() => setItemEvidencias(null)}
+        />
       )}
     </div>
   )
