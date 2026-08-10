@@ -13,14 +13,14 @@ const AÑOS = [AÑO_ACTUAL - 1, AÑO_ACTUAL, AÑO_ACTUAL + 1]
 
 const DEFAULTS = {
   actividad:    '',
-  empresa:      '',
+  empresaId:    '',
   objetivo:     '',
   metas:        '',
   estado:       'PENDIENTE',
   mesEjecucion: new Date().getMonth() + 1,
   año:          AÑO_ACTUAL,
   responsable:  '',
-  observaciones:'',
+  observacion:  '',
 }
 
 export default function ActividadModal({ actividad, empresas = [], onSave, onClose, saving = false }) {
@@ -61,21 +61,13 @@ export default function ActividadModal({ actividad, empresas = [], onSave, onClo
             />
           </FormField>
 
-          <FormField label="Empresa" required error={errors.empresa?.message}>
-            {empresas.length > 0 ? (
-              <Select {...register('empresa', { required: 'Requerido' })}>
-                <option value="">Seleccionar empresa…</option>
-                {empresas.map(e => (
-                  <option key={e.id} value={e.razonSocial}>{e.razonSocial}</option>
-                ))}
-              </Select>
-            ) : (
-              <Input
-                {...register('empresa', { required: 'Requerido' })}
-                placeholder="Nombre de la empresa"
-                error={!!errors.empresa}
-              />
-            )}
+          <FormField label="Empresa" required error={errors.empresaId?.message}>
+            <Select {...register('empresaId', { required: 'Requerido', valueAsNumber: true })}>
+              <option value="">Seleccionar empresa…</option>
+              {empresas.map(e => (
+                <option key={e.id} value={e.id}>{e.razonSocial}</option>
+              ))}
+            </Select>
           </FormField>
 
           <FormField label="Objetivo" required error={errors.objetivo?.message}>
@@ -126,7 +118,7 @@ export default function ActividadModal({ actividad, empresas = [], onSave, onClo
 
           <FormField label="Observaciones">
             <Textarea
-              {...register('observaciones')}
+              {...register('observacion')}
               rows={2}
               placeholder="Observaciones adicionales…"
             />

@@ -196,16 +196,21 @@ export default function PlanTrabajo() {
         planTrabajoDB.getAll(),
         empresaDB.getAll(),
       ])
+      const nombrePorId = Object.fromEntries((emps || []).map(e => [e.id, e.razonSocial]))
+      const idPorNombre  = Object.fromEntries((emps || []).map(e => [e.razonSocial, e.id]))
+      const conNombre = (arr) => (arr || []).map(a => ({ ...a, empresa: nombrePorId[a.empresaId] || 'Sin empresa' }))
+
       // Si no hay datos, insertar seed CRO-SST-003
       if (!acts || acts.length === 0) {
-        await planTrabajoDB.bulkCreate(SEED_PLAN.map(a => ({
+        await planTrabajoDB.bulkCreate(SEED_PLAN.map(({ empresa, ...a }) => ({
           ...a,
+          empresaId:     idPorNombre[empresa] || null,
           fechaCreacion: new Date().toISOString(),
         })))
         const nuevas = await planTrabajoDB.getAll()
-        setActividades(nuevas || [])
+        setActividades(conNombre(nuevas))
       } else {
-        setActividades(acts)
+        setActividades(conNombre(acts))
       }
       setEmpresas(emps || [])
     } finally {
@@ -278,7 +283,13 @@ export default function PlanTrabajo() {
     setSaving(true)
     try {
       const payload = {
-        ...data,
+        actividad:    data.actividad,
+        objetivo:     data.objetivo,
+        metas:        data.metas,
+        estado:       data.estado,
+        responsable:  data.responsable,
+        observacion:  data.observacion,
+        empresaId:    Number(data.empresaId),
         mesEjecucion: Number(data.mesEjecucion),
         año:          Number(data.año),
       }
@@ -289,6 +300,8 @@ export default function PlanTrabajo() {
       }
       setModal(null)
       await cargar()
+    } catch (err) {
+      alert(`Error al guardar: ${err.message}`)
     } finally {
       setSaving(false)
     }
