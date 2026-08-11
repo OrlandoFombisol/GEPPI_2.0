@@ -20,7 +20,6 @@ function descargarBlob(contenido, nombre, tipo = 'application/json') {
 }
 
 // ─── Sección 1: Importar Matriz ───────────────────────────────────────────────
-// (componente completo importado desde PROMPT-06)
 
 // ─── Sección 2: Respaldar y restaurar ────────────────────────────────────────
 function SeccionRespaldo() {
