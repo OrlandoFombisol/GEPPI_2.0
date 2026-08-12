@@ -4,6 +4,8 @@ Duvan, te dejo esto porque entrego el proyecto y quiero que lo recibas sabiendo 
 
 Va todo en un solo archivo a propósito: reglas de negocio, deuda técnica, pendientes, y mis notas personales. No quiero que tengas que andar abriendo cinco documentos distintos para entender una cosa.
 
+Una cosa importante antes de que sigas: el acceso que te di al repo es hasta el viernes, ese día te lo quito. No tiene mucho sentido dejarlo abierto más tiempo porque de ahí en adelante esto queda en manos tuyas y de tu equipo, ustedes van a tomar su propio rumbo con su propia arquitectura, y de paso el repo sigue conectado en vivo al deploy de Vercel y a la base de datos real de Supabase, así que tampoco tiene sentido dejar acceso de escritura abierto ahí una vez ya tengas lo que necesitas. Nada personal, es solo orden. Clona todo o descárgalo ya, el código completo y este documento incluido, y revisa cualquier duda antes del viernes, porque después de eso el repo queda cerrado de mi lado.
+
 ---
 
 ## Cómo levantar esto en tu máquina
@@ -269,7 +271,8 @@ Al mismo tiempo, es un proyecto que creció rápido y sin frenos de seguridad. S
 
 También te quiero contar algo con toda franqueza, porque prefiero que lo sepas por mí y no que lo asumas mal: el plan original **sí era .NET, con despliegue en AWS**, así lo definimos al principio. Antes de invertir tiempo real construyendo esa infraestructura, decidí cambiar de rumbo. En esa etapa el sistema lo iba a manejar una sola persona (el SISO), y el objetivo no era todavía tener algo listo para producción a escala, era validar si la lógica de negocio de SST que te documenté arriba de verdad servía como estaba pensada. Meterle semanas a levantar un backend en .NET y una arquitectura en AWS para que la usara un solo usuario de prueba no tenía sentido en ese momento, primero había que confirmar que el negocio detrás funcionara. Por eso pivoté a un stack más liviano (React + Supabase, con Vercel de hosting), que me permitió construir y validar rápido sin comprometer la calidad del dato ni de la lógica.
 
-Ese cambio de arquitectura pasó **antes** de que hubiera código .NET sustancial que migrar. No es que abandoné un proyecto a medias y dejé código huérfano en algún lado, es que corté por lo sano antes de construir en la dirección equivocada. Por eso no vas a encontrar ni rastro de .NET en este repositorio: nunca llegó a haber suficiente código como para que quedara algo que mostrarte de esa etapa.
+Ese cambio de arquitectura pasó **antes** de que hubiera código .NET sustancial que migrar. No es que abandoné un proyecto a medias y dejé código huérfano en algún lado, es que corté por lo sano antes de construir en la dirección equivocada. Tomé lo que necesitaba y creé este nuevo repositorio
+
 
 Ahora que esto se integra a la ERP con usuarios reales, tiene todo el sentido moverlo a algo como AWS con un backend propio, pero esa decisión le correspondía a esta etapa, la de ustedes, no a la de validar si la idea funcionaba con un solo usuario probándola.
 
