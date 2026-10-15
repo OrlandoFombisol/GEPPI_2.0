@@ -1,6 +1,22 @@
 {
-  "generadoEn": "2026-10-15T15:10:12.543Z",
+  "generadoEn": "2026-10-15T19:23:36.213Z",
   "commits": [
+    {
+      "hash": "8fd4339",
+      "fecha": "2026-10-15",
+      "titulo": "feat: permitir generar/imprimir la tarjeta QR del trabajador tambien desde Nueva Entrega",
+      "archivos": 3,
+      "agregadas": 175,
+      "quitadas": 143
+    },
+    {
+      "hash": "592b8fc",
+      "fecha": "2026-10-15",
+      "titulo": "fix: Mejora Continua solo cuenta trabajo desde el 15 de octubre en adelante",
+      "archivos": 1,
+      "agregadas": 6,
+      "quitadas": 1
+    },
     {
       "hash": "0a76a42",
       "fecha": "2026-10-15",
@@ -19,10 +35,10 @@
     }
   ],
   "totales": {
-    "numCambios": 2,
+    "numCambios": 4,
     "diasTrabajo": 1,
-    "lineasCodigoPropio": 28850,
-    "archivosCodigo": 128,
+    "lineasCodigoPropio": 28883,
+    "archivosCodigo": 129,
     "pruebasAutomaticas": 8,
     "pantallas": 28,
     "modulosNegocio": 32,
