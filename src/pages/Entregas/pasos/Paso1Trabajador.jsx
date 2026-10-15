@@ -3,6 +3,7 @@ import { Search, UserCheck, QrCode, CameraOff, X }  from 'lucide-react'
 import { trabajadorDB, cargoDB, sedeDB } from '@/db'
 import { obtenerIniciales }              from '@/utils/formatters'
 import { Badge, Button }                 from '@/components/ui'
+import TarjetaQRModal                    from '@/pages/Trabajadores/TarjetaQRModal'
 
 function TarjetaTrabajador({ t, seleccionado, onClick }) {
   const activo = seleccionado?.id === t.id
@@ -170,6 +171,7 @@ export default function Paso1Trabajador({ seleccionado, onNext }) {
   const [cargos,       setCargos]       = useState([])
   const [sedes,        setSedes]        = useState([])
   const [elegido,      setElegido]      = useState(seleccionado?.trabajador || null)
+  const [mostrarQR,    setMostrarQR]    = useState(false)
 
   useEffect(() => {
     async function cargar() {
@@ -289,11 +291,27 @@ export default function Paso1Trabajador({ seleccionado, onNext }) {
 
       {/* Resumen del seleccionado */}
       {elegido && (
-        <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 text-sm">
-          <span className="text-primary-700 font-medium">Trabajador seleccionado: </span>
-          <span className="text-primary-900 font-bold">{elegido.nombres} {elegido.apellidos}</span>
-          <span className="text-primary-600"> — {elegido.cargoNombre}</span>
+        <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 text-sm flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <span className="text-primary-700 font-medium">Trabajador seleccionado: </span>
+            <span className="text-primary-900 font-bold">{elegido.nombres} {elegido.apellidos}</span>
+            <span className="text-primary-600"> — {elegido.cargoNombre}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMostrarQR(true)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 hover:text-primary-900 flex-shrink-0"
+          >
+            <QrCode size={13} /> Ver/imprimir su tarjeta QR
+          </button>
         </div>
+      )}
+
+      {/* Aviso en modo escaneo si todavía no hay tarjetas generadas */}
+      {modo === 'qr' && (
+        <p className="text-xs text-slate-400 text-center">
+          ¿Este trabajador todavía no tiene tarjeta? Búscalo en la pestaña "Buscar" y genera su tarjeta QR ahí.
+        </p>
       )}
 
       <div className="flex justify-end">
@@ -301,6 +319,15 @@ export default function Paso1Trabajador({ seleccionado, onNext }) {
           Siguiente →
         </Button>
       </div>
+
+      {mostrarQR && elegido && (
+        <TarjetaQRModal
+          trabajador={elegido}
+          cargoNombre={elegido.cargoNombre}
+          sedeNombre={elegido.sedeNombre}
+          onClose={() => setMostrarQR(false)}
+        />
+      )}
     </div>
   )
 }
