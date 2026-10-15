@@ -18,7 +18,7 @@ const DEFAULTS = {
   codigoDocumento:  SISTEMA.CODIGO_DOCUMENTO,
   modulo:           MODULO.MATRIZ_EPP,
   fecha:            new Date().toISOString().slice(0, 10),
-  descripcion:      '',
+  descripcionCambio: '',
   responsable:      '',
   cargoResponsable: '',
 }
@@ -83,9 +83,9 @@ export default function CambioModal({ onSave, onClose, saving = false }) {
             </FormField>
           </div>
 
-          <FormField label="Descripción del cambio" required error={errors.descripcion?.message}>
+          <FormField label="Descripción del cambio" required error={errors.descripcionCambio?.message}>
             <textarea
-              {...register('descripcion', {
+              {...register('descripcionCambio', {
                 required: 'La descripción es requerida',
                 minLength: { value: 5, message: 'Mínimo 5 caracteres' },
               })}
@@ -95,8 +95,8 @@ export default function CambioModal({ onSave, onClose, saving = false }) {
                          text-slate-900 placeholder:text-slate-400 bg-white resize-none
                          focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
             />
-            {errors.descripcion && (
-              <p className="text-xs text-red-500 mt-0.5">{errors.descripcion.message}</p>
+            {errors.descripcionCambio && (
+              <p className="text-xs text-red-500 mt-0.5">{errors.descripcionCambio.message}</p>
             )}
           </FormField>
 

@@ -132,6 +132,8 @@ export default function Page() {
       }
       setConfirmarGuardar(false)
       await cargar()
+    } catch (err) {
+      alert(`Error al guardar la matriz: ${err.message}`)
     } finally {
       setSaving(false)
     }

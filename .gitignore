@@ -45,3 +45,7 @@ geppi_backup_*.json
 
 .vercel
 .env*
+
+# Llaves privadas (SSH, etc.) — nunca subir al repo
+*.pem
+*.key
