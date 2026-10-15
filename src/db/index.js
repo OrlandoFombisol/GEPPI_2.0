@@ -900,6 +900,10 @@ export const checklistDB = {
       supabase.from('checklist_preoperacional').insert(toDB(data)).select('id').single())
     return row?.id
   },
+  async update(id, data) {
+    await q('checklist.update',
+      supabase.from('checklist_preoperacional').update(toDB(data)).eq('id', id))
+  },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

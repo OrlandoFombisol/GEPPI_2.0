@@ -166,6 +166,11 @@ export default function Page() {
         vehiculos={vehiculos}
         empresas={empresas}
         onVolver={() => setDetalle(null)}
+        onActualizado={async () => {
+          const full = await checklistDB.getById(detalle.id)
+          setDetalle(prev => prev ? { ...prev, fotoBase64: full?.fotoBase64 ?? null, fotoFecha: full?.fotoFecha ?? null } : prev)
+          await cargar()
+        }}
       />
     )
   }

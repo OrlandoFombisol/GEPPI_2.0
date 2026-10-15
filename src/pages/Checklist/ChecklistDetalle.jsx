@@ -1,4 +1,6 @@
-import { CheckCircle2, XCircle, AlertCircle, MinusCircle } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { CheckCircle2, XCircle, AlertCircle, MinusCircle, Camera, Pencil, Trash2 } from 'lucide-react'
+import { checklistDB }                from '@/db'
 import { formatearFecha }            from '@/utils/dates'
 import { Badge, Button, BackButton } from '@/components/ui'
 
@@ -15,7 +17,12 @@ const ESTADO_BADGE = {
   'N/A':   'neutral',
 }
 
-export default function ChecklistDetalle({ checklist, vehiculos, empresas, onVolver }) {
+export default function ChecklistDetalle({ checklist, vehiculos, empresas, onVolver, onActualizado }) {
+  const [fotoNueva,  setFotoNueva]  = useState(null)
+  const [editandoFoto, setEditandoFoto] = useState(false)
+  const [guardando,  setGuardando]  = useState(false)
+  const fotoRef = useRef()
+
   if (!checklist) return null
 
   const empresa  = empresas.find(e => e.id === checklist.empresaId)
@@ -26,6 +33,31 @@ export default function ChecklistDetalle({ checklist, vehiculos, empresas, onVol
   const totalBueno  = items.filter(i => i.estado === 'BUENO').length
   const totalRegular = items.filter(i => i.estado === 'REGULAR').length
   const totalMalo   = items.filter(i => i.estado === 'MALO').length
+
+  const handleSeleccionFoto = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => setFotoNueva(ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
+  const guardarFoto = async (fotoBase64) => {
+    setGuardando(true)
+    try {
+      await checklistDB.update(checklist.id, {
+        fotoBase64,
+        fotoFecha: fotoBase64 ? new Date().toISOString() : null,
+      })
+      setEditandoFoto(false)
+      setFotoNueva(null)
+      await onActualizado?.()
+    } catch (err) {
+      alert(`Error al guardar la foto: ${err.message}`)
+    } finally {
+      setGuardando(false)
+    }
+  }
 
   return (
     <div className="p-3 sm:p-6 max-w-3xl mx-auto space-y-5">
@@ -89,18 +121,69 @@ export default function ChecklistDetalle({ checklist, vehiculos, empresas, onVol
       </div>
 
       {/* Foto */}
-      {checklist.fotoBase64 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-2">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-2">
+        <div className="flex items-center justify-between">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
             Foto del vehículo
           </p>
+          {!editandoFoto && (
+            <button
+              onClick={() => { setFotoNueva(null); setEditandoFoto(true) }}
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 hover:text-primary-900"
+            >
+              <Pencil size={12} /> {checklist.fotoBase64 ? 'Cambiar foto' : 'Agregar foto'}
+            </button>
+          )}
+        </div>
+
+        {editandoFoto ? (
+          <div className="space-y-3">
+            <input ref={fotoRef} type="file" accept="image/*" capture="environment"
+              onChange={handleSeleccionFoto} className="hidden" />
+
+            {fotoNueva ? (
+              <img src={fotoNueva} alt="Nueva foto" className="w-full max-h-72 object-cover rounded-xl border border-slate-200" />
+            ) : checklist.fotoBase64 ? (
+              <img src={checklist.fotoBase64} alt="Foto actual" className="w-full max-h-72 object-cover rounded-xl border border-slate-200 opacity-60" />
+            ) : (
+              <button type="button" onClick={() => fotoRef.current?.click()}
+                className="w-full h-32 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-slate-300 hover:bg-slate-50 transition-all">
+                <Camera size={20} />
+                <span className="text-xs font-medium">Tomar o adjuntar foto</span>
+              </button>
+            )}
+
+            <div className="flex flex-wrap gap-2 justify-end">
+              <Button variant="secondary" size="sm" onClick={() => { setEditandoFoto(false); setFotoNueva(null) }} disabled={guardando}>
+                Cancelar
+              </Button>
+              {!fotoNueva && (
+                <Button variant="secondary" size="sm" iconLeft={Camera} onClick={() => fotoRef.current?.click()} disabled={guardando}>
+                  {checklist.fotoBase64 ? 'Tomar otra' : 'Tomar foto'}
+                </Button>
+              )}
+              {checklist.fotoBase64 && !fotoNueva && (
+                <Button variant="danger" size="sm" iconLeft={Trash2} onClick={() => guardarFoto(null)} loading={guardando}>
+                  Quitar foto
+                </Button>
+              )}
+              {fotoNueva && (
+                <Button size="sm" onClick={() => guardarFoto(fotoNueva)} loading={guardando}>
+                  Guardar foto
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : checklist.fotoBase64 ? (
           <img
             src={checklist.fotoBase64}
             alt="Foto del vehículo"
             className="w-full max-h-72 object-cover rounded-xl border border-slate-200"
           />
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-slate-400 text-center py-6">Sin foto registrada.</p>
+        )}
+      </div>
 
       {/* Ítems agrupados */}
       {grupos.map(grupo => {
