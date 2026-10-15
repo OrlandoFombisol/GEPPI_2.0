@@ -1,0 +1,479 @@
+{
+  "generadoEn": "2026-10-15T14:44:37.030Z",
+  "commits": [
+    {
+      "hash": "571c328",
+      "fecha": "2026-10-15",
+      "titulo": "fix: corregir columnas de gestion del cambio y condiciones inseguras, manejo de error en matriz de cargos",
+      "archivos": 5,
+      "agregadas": 22,
+      "quitadas": 5
+    },
+    {
+      "hash": "62e2bc3",
+      "fecha": "2026-08-12",
+      "titulo": "docs: agregar nota de plazo de acceso al repo para Duvan",
+      "archivos": 1,
+      "agregadas": 4,
+      "quitadas": 1
+    },
+    {
+      "hash": "1208a32",
+      "fecha": "2026-08-12",
+      "titulo": "docs: agregar documento de entrega para Duvan (reglas de negocio, modelo de datos, deuda tecnica)",
+      "archivos": 1,
+      "agregadas": 284,
+      "quitadas": 0
+    },
+    {
+      "hash": "568fae7",
+      "fecha": "2026-08-11",
+      "titulo": "chore: limpiar comentario obsoleto en Configuracion",
+      "archivos": 1,
+      "agregadas": 0,
+      "quitadas": 1
+    },
+    {
+      "hash": "7df49ac",
+      "fecha": "2026-08-09",
+      "titulo": "fix: Plan Anual no dejaba crear actividades, e Inspección de Extintores fallaba al guardar",
+      "archivos": 3,
+      "agregadas": 43,
+      "quitadas": 22
+    },
+    {
+      "hash": "e987f2b",
+      "fecha": "2026-08-09",
+      "titulo": "feat: alertas de actos inseguros, importar Excel, ficha técnica EPP y evidencias SG-SST 0312",
+      "archivos": 13,
+      "agregadas": 821,
+      "quitadas": 60
+    },
+    {
+      "hash": "2710219",
+      "fecha": "2026-08-06",
+      "titulo": "fix: 4 bugs reportados por SISO — AT-IT, Actos Inseguros, Exámenes Médicos e Indicadores no guardaban",
+      "archivos": 7,
+      "agregadas": 55,
+      "quitadas": 14
+    },
+    {
+      "hash": "ff94e19",
+      "fecha": "2026-08-06",
+      "titulo": "test: mover badge de build al header global",
+      "archivos": 2,
+      "agregadas": 13,
+      "quitadas": 3
+    },
+    {
+      "hash": "8469bb1",
+      "fecha": "2026-08-06",
+      "titulo": "test: mover confirmación de deploy al header del Dashboard",
+      "archivos": 3,
+      "agregadas": 3,
+      "quitadas": 41
+    },
+    {
+      "hash": "6d20c5e",
+      "fecha": "2026-08-06",
+      "titulo": "test: agregar badge de confirmación de deploy con fecha/hora en vivo",
+      "archivos": 3,
+      "agregadas": 42,
+      "quitadas": 0
+    },
+    {
+      "hash": "e3bda88",
+      "fecha": "2026-07-07",
+      "titulo": "fix: sede de extintores carga desde tabla sede del sistema",
+      "archivos": 1,
+      "agregadas": 24,
+      "quitadas": 37
+    },
+    {
+      "hash": "1b48bb1",
+      "fecha": "2026-07-07",
+      "titulo": "fix: inspector pre-filled from user context, sede siempre dropdown",
+      "archivos": 1,
+      "agregadas": 19,
+      "quitadas": 25
+    },
+    {
+      "hash": "25c57cc",
+      "fecha": "2026-07-07",
+      "titulo": "feat: inspección de extintores + renombrar módulo Seguridad Vial a Inspecciones",
+      "archivos": 8,
+      "agregadas": 778,
+      "quitadas": 33
+    },
+    {
+      "hash": "0744076",
+      "fecha": "2026-07-07",
+      "titulo": "feat: dropdown tipo de vehículo en checklist (admin + QR)",
+      "archivos": 5,
+      "agregadas": 62,
+      "quitadas": 11
+    },
+    {
+      "hash": "5f53f03",
+      "fecha": "2026-07-07",
+      "titulo": "fix: quitar created_at de getList() — columna no existe en checklist_preoperacional",
+      "archivos": 1,
+      "agregadas": 1,
+      "quitadas": 1
+    },
+    {
+      "hash": "477ac10",
+      "fecha": "2026-07-07",
+      "titulo": "fix: mostrar todas las empresas en dropdown de ChecklistForm",
+      "archivos": 1,
+      "agregadas": 1,
+      "quitadas": 1
+    },
+    {
+      "hash": "f6cd320",
+      "fecha": "2026-07-07",
+      "titulo": "feat: performance, alertas trigger, conductor dropdown y back buttons",
+      "archivos": 8,
+      "agregadas": 242,
+      "quitadas": 81
+    },
+    {
+      "hash": "9ad6756",
+      "fecha": "2026-07-07",
+      "titulo": "docs: agregar migración para políticas públicas del checklist QR",
+      "archivos": 1,
+      "agregadas": 10,
+      "quitadas": 0
+    },
+    {
+      "hash": "e146ee8",
+      "fecha": "2026-07-07",
+      "titulo": "fix: mostrar placa en checklist llenado desde QR móvil",
+      "archivos": 1,
+      "agregadas": 1,
+      "quitadas": 1
+    },
+    {
+      "hash": "fb6c46a",
+      "fecha": "2026-07-07",
+      "titulo": "fix: volver a vista inicial al hacer clic en módulo desde sidebar",
+      "archivos": 4,
+      "agregadas": 20,
+      "quitadas": 0
+    },
+    {
+      "hash": "a6cc8d1",
+      "fecha": "2026-07-07",
+      "titulo": "fix: corregir bugs críticos v2.0 y mejorar checklist preoperacional",
+      "archivos": 10,
+      "agregadas": 188,
+      "quitadas": 94
+    },
+    {
+      "hash": "f8c22bd",
+      "fecha": "2026-07-05",
+      "titulo": "feat: Matriz por Cargos con guardado manual y confirmacion",
+      "archivos": 1,
+      "agregadas": 139,
+      "quitadas": 55
+    },
+    {
+      "hash": "4e5cd33",
+      "fecha": "2026-07-05",
+      "titulo": "fix(login): remove fake stats and feature pills from right panel only",
+      "archivos": 1,
+      "agregadas": 1133,
+      "quitadas": 547
+    },
+    {
+      "hash": "b195007",
+      "fecha": "2026-07-05",
+      "titulo": "chore: trigger redeploy",
+      "archivos": 0,
+      "agregadas": 0,
+      "quitadas": 0
+    },
+    {
+      "hash": "48bc9f8",
+      "fecha": "2026-07-05",
+      "titulo": "redesign: Login page — executive UI/UX overhaul",
+      "archivos": 1,
+      "agregadas": 545,
+      "quitadas": 1202
+    },
+    {
+      "hash": "15034b8",
+      "fecha": "2026-07-05",
+      "titulo": "feat: pre-fill login credentials for faster access",
+      "archivos": 1,
+      "agregadas": 4,
+      "quitadas": 3
+    },
+    {
+      "hash": "107b45b",
+      "fecha": "2026-07-05",
+      "titulo": "chore: update default login email to admin@geppi.com",
+      "archivos": 1,
+      "agregadas": 1,
+      "quitadas": 1
+    },
+    {
+      "hash": "1e070ac",
+      "fecha": "2026-07-05",
+      "titulo": "fix: mobile responsiveness — sidebar and login page",
+      "archivos": 2,
+      "agregadas": 5,
+      "quitadas": 5
+    },
+    {
+      "hash": "0e67e0a",
+      "fecha": "2026-07-05",
+      "titulo": "fix(mobile): responsive layout for banner, operario checklist and tables",
+      "archivos": 5,
+      "agregadas": 52,
+      "quitadas": 28
+    },
+    {
+      "hash": "d69c7f2",
+      "fecha": "2026-07-05",
+      "titulo": "feat: add QR access modal for conductor checklist",
+      "archivos": 2,
+      "agregadas": 113,
+      "quitadas": 1
+    },
+    {
+      "hash": "4a55578",
+      "fecha": "2026-07-05",
+      "titulo": "feat(operario): public checklist preoperacional for conductores",
+      "archivos": 2,
+      "agregadas": 476,
+      "quitadas": 0
+    },
+    {
+      "hash": "0ee2033",
+      "fecha": "2026-07-05",
+      "titulo": "feat(modals): unified colored headers across all modals",
+      "archivos": 10,
+      "agregadas": 70,
+      "quitadas": 15
+    },
+    {
+      "hash": "5c24728",
+      "fecha": "2026-07-05",
+      "titulo": "refactor(sidebar): section headers as centered dividers — line + text + line + chevron",
+      "archivos": 1,
+      "agregadas": 9,
+      "quitadas": 15
+    },
+    {
+      "hash": "57ab1cb",
+      "fecha": "2026-07-05",
+      "titulo": "refactor(sidebar): option A hierarchy — flat uppercase section labels",
+      "archivos": 1,
+      "agregadas": 30,
+      "quitadas": 53
+    },
+    {
+      "hash": "147a447",
+      "fecha": "2026-07-05",
+      "titulo": "feat(sidebar): redesign UX/UI with section colors, richer icons and accordion",
+      "archivos": 1,
+      "agregadas": 270,
+      "quitadas": 216
+    },
+    {
+      "hash": "27b50b2",
+      "fecha": "2026-07-05",
+      "titulo": "fix: sidebar secciones contraídas por defecto al iniciar",
+      "archivos": 1,
+      "agregadas": 1,
+      "quitadas": 1
+    },
+    {
+      "hash": "465d0d5",
+      "fecha": "2026-07-05",
+      "titulo": "fix: corregir sintaxis JSX en Inspecciones/index.jsx (build fallaba)",
+      "archivos": 1,
+      "agregadas": 1,
+      "quitadas": 2
+    },
+    {
+      "hash": "2471d21",
+      "fecha": "2026-07-05",
+      "titulo": "feat: sidebar colapsable por sección + inspecciones como modales",
+      "archivos": 4,
+      "agregadas": 697,
+      "quitadas": 876
+    },
+    {
+      "hash": "84eaf7d",
+      "fecha": "2026-07-04",
+      "titulo": "fix: Inspecciones — eliminar doble banner, alinear con patrón de módulos",
+      "archivos": 2,
+      "agregadas": 152,
+      "quitadas": 193
+    },
+    {
+      "hash": "5b930cf",
+      "fecha": "2026-07-04",
+      "titulo": "design: Inspecciones — rediseño UX ejecutivo completo",
+      "archivos": 3,
+      "agregadas": 784,
+      "quitadas": 470
+    },
+    {
+      "hash": "0d43469",
+      "fecha": "2026-07-04",
+      "titulo": "feat: módulo de Inspecciones de Seguridad SST",
+      "archivos": 7,
+      "agregadas": 859,
+      "quitadas": 0
+    },
+    {
+      "hash": "7cb2c76",
+      "fecha": "2026-07-04",
+      "titulo": "feat(plan-trabajo): evidencias por actividad via Supabase Storage",
+      "archivos": 4,
+      "agregadas": 287,
+      "quitadas": 3
+    },
+    {
+      "hash": "bd74a74",
+      "fecha": "2026-07-04",
+      "titulo": "feat(alertas): gestionar hallazgo de checklist con accion tomada",
+      "archivos": 3,
+      "agregadas": 94,
+      "quitadas": 9
+    },
+    {
+      "hash": "09a0376",
+      "fecha": "2026-07-04",
+      "titulo": "feat(alertas): shake+color en sidebar, foto+items en tarjeta checklist, mensaje especifico",
+      "archivos": 3,
+      "agregadas": 180,
+      "quitadas": 41
+    },
+    {
+      "hash": "1a60a09",
+      "fecha": "2026-07-04",
+      "titulo": "fix(checklist): evitar duplicado de vehículo por placa + botón marcar todas buenas",
+      "archivos": 2,
+      "agregadas": 24,
+      "quitadas": 2
+    },
+    {
+      "hash": "109a4b7",
+      "fecha": "2026-07-04",
+      "titulo": "fix(schema): agregar columnas faltantes en checklist_preoperacional",
+      "archivos": 1,
+      "agregadas": 7,
+      "quitadas": 0
+    },
+    {
+      "hash": "e29f998",
+      "fecha": "2026-07-04",
+      "titulo": "feat(checklist): agregar ítem Freno de aire al grupo Frenos",
+      "archivos": 1,
+      "agregadas": 1,
+      "quitadas": 0
+    },
+    {
+      "hash": "aea3141",
+      "fecha": "2026-07-04",
+      "titulo": "feat(checklist): generar alerta interna al guardar ítems MALO/REGULAR",
+      "archivos": 1,
+      "agregadas": 20,
+      "quitadas": 2
+    },
+    {
+      "hash": "9643146",
+      "fecha": "2026-06-29",
+      "titulo": "trigger: deploy after making repo public",
+      "archivos": 0,
+      "agregadas": 0,
+      "quitadas": 0
+    },
+    {
+      "hash": "3c75141",
+      "fecha": "2026-06-29",
+      "titulo": "trigger: redeploy with correct author",
+      "archivos": 0,
+      "agregadas": 0,
+      "quitadas": 0
+    },
+    {
+      "hash": "db44069",
+      "fecha": "2026-06-29",
+      "titulo": "Update migration with missing columns found during testing",
+      "archivos": 1,
+      "agregadas": 20,
+      "quitadas": 0
+    },
+    {
+      "hash": "1c225fd",
+      "fecha": "2026-06-29",
+      "titulo": "Add QR signing option to step 3 of delivery flow",
+      "archivos": 3,
+      "agregadas": 214,
+      "quitadas": 29
+    },
+    {
+      "hash": "9338e18",
+      "fecha": "2026-06-29",
+      "titulo": "Strip fichaTecnicaBlob from EPP insert (requires Storage, not DB column)",
+      "archivos": 1,
+      "agregadas": 4,
+      "quitadas": 2
+    },
+    {
+      "hash": "b2d9614",
+      "fecha": "2026-06-29",
+      "titulo": "Add usuarioDB.create via Supabase signUp + fix AppLoader text",
+      "archivos": 2,
+      "agregadas": 18,
+      "quitadas": 1
+    },
+    {
+      "hash": "5af9d7e",
+      "fecha": "2026-06-29",
+      "titulo": "Migrate auth and data layer from Dexie to Supabase",
+      "archivos": 4,
+      "agregadas": 27,
+      "quitadas": 152
+    },
+    {
+      "hash": "26d8e3a",
+      "fecha": "2026-06-29",
+      "titulo": "feat: migración completa DB layer — Dexie → Supabase",
+      "archivos": 5,
+      "agregadas": 548,
+      "quitadas": 1520
+    },
+    {
+      "hash": "a28d9e5",
+      "fecha": "2026-06-29",
+      "titulo": "chore: configuración Supabase — cliente, esquema SQL y RLS",
+      "archivos": 3,
+      "agregadas": 472,
+      "quitadas": 0
+    },
+    {
+      "hash": "ad70daa",
+      "fecha": "2026-06-29",
+      "titulo": "feat: GEPPI v2.0 — migración a Supabase + Vercel",
+      "archivos": 103,
+      "agregadas": 24382,
+      "quitadas": 0
+    }
+  ],
+  "totales": {
+    "numCambios": 58,
+    "diasTrabajo": 9,
+    "lineasCodigoPropio": 28068,
+    "archivosCodigo": 122,
+    "pruebasAutomaticas": 0,
+    "pantallas": 27,
+    "modulosNegocio": 32,
+    "migracionesBD": 11
+  }
+}

@@ -36,6 +36,7 @@ const UsuariosRoles           = lazy(() => import('@/pages/UsuariosRoles'))
 const AceptarEntrega          = lazy(() => import('@/pages/AceptarEntrega'))
 const Inspecciones            = lazy(() => import('@/pages/Inspecciones'))
 const Operario                = lazy(() => import('@/pages/Operario'))
+const MejoraContinua          = lazy(() => import('@/pages/MejoraContinua'))
 
 // ─── Guarda de ruta ───────────────────────────────────────────────────────────
 function ProtectedRoute({ children }) {
@@ -299,6 +300,10 @@ export default function App() {
           <Route
             path="/inspecciones"
             element={<Suspense fallback={<PageLoader />}><Inspecciones /></Suspense>}
+          />
+          <Route
+            path="/mejora-continua"
+            element={<Suspense fallback={<PageLoader />}><MejoraContinua /></Suspense>}
           />
 
         </Route>

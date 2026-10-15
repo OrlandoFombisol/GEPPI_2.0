@@ -219,6 +219,7 @@ export const MODULO = {
   GESTION_CAMBIO:  'GESTION_CAMBIO',
   AUDITORIA:       'AUDITORIA',
   CONFIGURACION:   'CONFIGURACION',
+  MEJORA_CONTINUA: 'MEJORA_CONTINUA',
 }
 
 // ─── ACCIONES DE AUDITORÍA ────────────────────────────────────────────────────
@@ -233,6 +234,28 @@ export const ACCION = {
   ANULAR:    'ANULAR',
   LOGIN:     'LOGIN',
   LOGOUT:    'LOGOUT',
+}
+
+// ─── MEJORA CONTINUA — trabajo que no queda en el código ─────────────────────
+
+export const TIPO_NOTA_MEJORA = {
+  ANALISIS:     'ANALISIS',
+  SOPORTE:      'SOPORTE',
+  DATOS:        'DATOS',
+  SERVIDORES:   'SERVIDORES',
+  SEGURIDAD:    'SEGURIDAD',
+  CAPACITACION: 'CAPACITACION',
+  OTRO:         'OTRO',
+}
+
+export const TIPO_NOTA_MEJORA_LABEL = {
+  ANALISIS:     'Análisis',
+  SOPORTE:      'Soporte',
+  DATOS:        'Datos',
+  SERVIDORES:   'Servidores',
+  SEGURIDAD:    'Seguridad',
+  CAPACITACION: 'Capacitación',
+  OTRO:         'Otro',
 }
 
 // ─── PAGINACIÓN ───────────────────────────────────────────────────────────────

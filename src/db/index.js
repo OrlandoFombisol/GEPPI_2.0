@@ -1188,5 +1188,25 @@ export const evidenciaItemSgsstDB = {
   },
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  MEJORA CONTINUA — notas de trabajo que no queda en el código
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const notaMejoraDB = {
+  async getAll() {
+    const data = await q('notaMejora.getAll',
+      supabase.from('nota_mejora').select('*').order('fecha', { ascending: false }))
+    return manyFromDB(data)
+  },
+  async create(data) {
+    const row = await one('notaMejora.create',
+      supabase.from('nota_mejora').insert(toDB(data)).select('id').single())
+    return row?.id
+  },
+  async remove(id) {
+    await q('notaMejora.remove', supabase.from('nota_mejora').delete().eq('id', id))
+  },
+}
+
 // Alias de compatibilidad — algunos archivos importan db directamente
 export { supabase as db }

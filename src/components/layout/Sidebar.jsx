@@ -11,7 +11,7 @@ import {
   BarChart3, FileBarChart2, BellRing,
   Car, ListChecks, Activity,
   CalendarCheck, HeartPulse, AlertTriangle, Stethoscope, TrendingUp, BadgeCheck,
-  Settings2, GitMerge, FileSearch, UserCog, SlidersHorizontal,
+  Settings2, GitMerge, FileSearch, UserCog, SlidersHorizontal, Sparkles,
 } from 'lucide-react'
 const logoPng = '/logo.jpg'
 import { SISTEMA }  from '@/constants'
@@ -89,6 +89,7 @@ const NAV_SECTIONS = [
       { label: 'Auditoría',          path: '/auditoria',      icon: FileSearch,        color: '#CBD5E1', adminOnly: true },
       { label: 'Usuarios y Roles',   path: '/usuarios-roles', icon: UserCog,           color: '#A78BFA', adminOnly: true },
       { label: 'Configuración',      path: '/configuracion',  icon: SlidersHorizontal, color: '#94A3B8', adminOnly: true },
+      { label: 'Mejora Continua',    path: '/mejora-continua', icon: Sparkles,         color: '#8B5CF6', adminOnly: true },
     ],
   },
 ]
