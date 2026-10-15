@@ -21,6 +21,11 @@ const SALIDA = join(RAIZ, 'src/data/mejora-continua.json')
 const RUTA_JSON_RELATIVA = 'src/data/mejora-continua.json'
 const ZONA = 'America/Bogota'
 
+// Mejora Continua solo debe mostrar trabajo a partir de esta fecha (incluida),
+// no todo el historial del proyecto desde el inicio. Ajusta esto si en algún
+// momento se decide correr el conteo desde otra fecha.
+const FECHA_INICIO = '2026-10-15'
+
 // ─── Exclusiones (dependencias, binarios, código generado) ───────────────────
 
 const ES_LOCKFILE = /^(package-lock\.json|yarn\.lock|pnpm-lock\.yaml)$/
@@ -147,7 +152,7 @@ function calcularTotales(commits) {
 
 // ─── Ejecutar ──────────────────────────────────────────────────────────────────
 
-const commits  = leerHistorialGit()
+const commits  = leerHistorialGit().filter(c => c.fecha >= FECHA_INICIO)
 const totales  = calcularTotales(commits)
 
 const salidaJson = {
