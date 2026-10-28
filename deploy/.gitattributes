@@ -1,0 +1,6 @@
+# Los archivos del despliegue corren en Linux: siempre con fin de línea LF
+*.sh text eol=lf
+*.sql text eol=lf
+*.mjs text eol=lf
+*.yml text eol=lf
+Caddyfile text eol=lf
