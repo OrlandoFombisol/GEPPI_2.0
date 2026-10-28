@@ -792,12 +792,17 @@ export const usuarioDB = {
     return fromDB(data)
   },
   async create({ nombre, correo, password, rol, estado }) {
-    // signUp preserva la sesión existente del admin (Supabase v2)
+    // En el servidor de la empresa los usuarios quedan confirmados al crearlos, y signUp
+    // abre sesión con el usuario nuevo: se guarda la del admin y se restaura enseguida
+    const { data: { session: sesionAdmin } } = await supabase.auth.getSession()
     const { data, error } = await supabase.auth.signUp({
       email: correo.toLowerCase(),
       password,
       options: { data: { nombre, rol: rol || 'COLABORADOR' } },
     })
+    if (data?.session && sesionAdmin) {
+      await supabase.auth.setSession({ access_token: sesionAdmin.access_token, refresh_token: sesionAdmin.refresh_token })
+    }
     if (error) throw error
     if (!data.user) throw new Error('No se pudo crear el usuario.')
     // El trigger handle_new_user ya insertó la fila; actualizamos campos extra

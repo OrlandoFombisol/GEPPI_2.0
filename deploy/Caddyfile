@@ -1,0 +1,24 @@
+# Mismas rutas que Supabase, para que supabase-js funcione igual que antes
+:80 {
+	encode gzip
+
+	handle_path /auth/v1/* {
+		reverse_proxy auth:9999
+	}
+	handle_path /rest/v1/* {
+		reverse_proxy rest:3000
+	}
+	handle_path /storage/v1/* {
+		request_body {
+			max_size 50MB
+		}
+		reverse_proxy storage:5000
+	}
+
+	# Pantallas de GEEPI (aplicación de una sola página)
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

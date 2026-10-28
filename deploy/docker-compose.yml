@@ -1,0 +1,128 @@
+# GEEPI en el AWS de Fombisol (servidor de ATLAS, Lightsail).
+# Reemplaza a Supabase con sus mismas piezas de código abierto, así la aplicación no cambia:
+#   db       PostgreSQL propio de GEEPI (separado de la base de ATLAS)
+#   auth     GoTrue: usuarios e inicio de sesión          → /auth/v1
+#   rest     PostgREST: lectura y escritura de tablas      → /rest/v1
+#   storage  Storage API: fotos y archivos de evidencias   → /storage/v1
+#   gateway  Caddy: sirve las pantallas y reparte /auth, /rest y /storage
+# Las claves viven en deploy/.env (no se sube al repositorio). Ver deploy/LEEME.md.
+
+name: geepi
+
+services:
+  db:
+    image: postgres:15.8-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      GEEPI_SERVICIOS_PASSWORD: ${SERVICIOS_PASSWORD}
+    volumes:
+      - geepi-db:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    deploy:
+      resources:
+        limits: { memory: 384m }
+
+  auth:
+    image: supabase/gotrue:v2.158.1
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${URL_PUBLICA}/auth/v1
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${SERVICIOS_PASSWORD}@db:5432/postgres
+      GOTRUE_SITE_URL: ${URL_PUBLICA}
+      GOTRUE_URI_ALLOW_LIST: ${URL_PUBLICA}
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      # Los usuarios los crea un administrador de GEEPI: no hay correo de confirmación
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "false"
+      GOTRUE_RATE_LIMIT_TOKEN_REFRESH: 300
+    deploy:
+      resources:
+        limits: { memory: 128m }
+
+  rest:
+    image: postgrest/postgrest:v12.2.3
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+      auth: { condition: service_started }
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${SERVICIOS_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public,storage
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: 3600
+    deploy:
+      resources:
+        limits: { memory: 128m }
+
+  storage:
+    image: supabase/storage-api:v1.11.13
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+      rest: { condition: service_started }
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_KEY}
+      POSTGREST_URL: http://rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${SERVICIOS_PASSWORD}@db:5432/postgres
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      GLOBAL_S3_BUCKET: stub
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+    volumes:
+      - geepi-archivos:/var/lib/storage
+    deploy:
+      resources:
+        limits: { memory: 256m }
+
+  gateway:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on: [auth, rest, storage]
+    ports:
+      # Solo escucha en el propio servidor; el Caddy de ATLAS publica geepi.fombisol.com.co con HTTPS
+      - "${PUERTO_LOCAL:-127.0.0.1:8787}:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${CARPETA_PANTALLAS:-../dist}:/srv:ro
+    networks:
+      default: {}
+      # El Caddy de ATLAS (que tiene los certificados HTTPS) entra por aquí como "geepi-gateway"
+      atlas:
+        aliases: [geepi-gateway]
+    deploy:
+      resources:
+        limits: { memory: 64m }
+
+networks:
+  atlas:
+    name: ${RED_ATLAS:-atlas_default}
+    external: true
+
+volumes:
+  geepi-db:
+  geepi-archivos:
