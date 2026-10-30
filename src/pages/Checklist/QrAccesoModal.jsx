@@ -26,7 +26,7 @@ export default function QrAccesoModal({ onClose }) {
   function descargar() {
     const a = document.createElement('a')
     a.href = qrSrc
-    a.download = 'GEPPI_checklist_operario.png'
+    a.download = 'SST_Fombisol_checklist_operario.png'
     a.click()
   }
 

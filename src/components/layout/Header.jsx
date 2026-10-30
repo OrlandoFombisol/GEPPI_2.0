@@ -51,7 +51,7 @@ export default function Header({ onMenuClick }) {
       ? location.pathname === '/dashboard'
       : location.pathname.startsWith(path)
   )
-  const meta = currentMeta ? currentMeta[1] : { title: 'GEPPI', parent: null }
+  const meta = currentMeta ? currentMeta[1] : { title: 'SST Fombisol', parent: null }
 
   return (
     <>
@@ -78,12 +78,12 @@ export default function Header({ onMenuClick }) {
         <Link to="/dashboard" className="lg:hidden flex items-center gap-2 flex-shrink-0">
           <div style={{ width:28, height:28, background:'rgba(255,255,255,0.95)',
                         borderRadius:8, padding:2, boxShadow:'0 2px 8px rgba(27,98,204,0.25)' }}>
-            <img src={logoPng} alt="GEPPI" style={{ width:'100%', height:'100%', objectFit:'contain' }}/>
+            <img src={logoPng} alt="SST Fombisol" style={{ width:'100%', height:'100%', objectFit:'contain' }}/>
           </div>
           <span className="text-sm font-black tracking-wider"
             style={{ background:'linear-gradient(90deg,#39B54A,#1b62cc,#F7941D)',
                      WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>
-            GEPPI
+            SST Fombisol
           </span>
         </Link>
 

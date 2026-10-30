@@ -220,10 +220,10 @@ export default function Operario() {
         className="flex items-center gap-3 flex-shrink-0">
         <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center flex-shrink-0"
           style={{ padding: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
-          <img src={logoPng} alt="GEPPI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          <img src={logoPng} alt="SST Fombisol" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <div>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'white', letterSpacing: '0.08em' }}>GEPPI</p>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'white', letterSpacing: '0.08em' }}>SST Fombisol</p>
           <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.65)', fontWeight: 500 }}>Checklist Preoperacional</p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">

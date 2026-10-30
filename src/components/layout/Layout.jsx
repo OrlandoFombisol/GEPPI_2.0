@@ -23,7 +23,7 @@ function Watermark() {
         background: 'radial-gradient(circle, rgba(57,181,74,0.07), transparent 65%)',
       }} />
       <img
-        src="/logo.jpg"
+        src="/logo.png"
         alt=""
         style={{
           position: 'absolute', top: 0, right: 0,

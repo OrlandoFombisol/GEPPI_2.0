@@ -153,7 +153,7 @@ h2{font-size:10px;font-weight:700;color:#64748b;letter-spacing:.1em;text-transfo
 </style></head><body>
 <div class="hdr">
   <div>
-    <p style="font-size:9px;opacity:.65;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">GEPPI · SST</p>
+    <p style="font-size:9px;opacity:.65;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px">SST Fombisol</p>
     <h1>🧯 Inspección de Extintores</h1>
     <p>${empresa} &nbsp;·&nbsp; ${inspeccion.sede || '—'} &nbsp;·&nbsp; ${mesFmt}</p>
   </div>
@@ -206,7 +206,7 @@ h2{font-size:10px;font-weight:700;color:#64748b;letter-spacing:.1em;text-transfo
     ${observaciones.map(o => `<p>• ${o}</p>`).join('')}
   </div>` : ''}
   <div class="foot">
-    <p style="font-size:10px;color:#94a3b8">GEPPI v2.0 · ${new Date().toLocaleString('es-CO')}</p>
+    <p style="font-size:10px;color:#94a3b8">SST Fombisol · ${new Date().toLocaleString('es-CO')}</p>
     <div class="firma">Firma del Inspector</div>
   </div>
 </div></body></html>`)
@@ -253,7 +253,7 @@ foto{max-width:240px;max-height:160px;border-radius:8px;border:1px solid #e2e8f0
 </style></head><body>
 <div class="hdr">
   <div>
-    <p style="font-size:10px;opacity:.65;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">GEPPI · SST</p>
+    <p style="font-size:10px;opacity:.65;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">SST Fombisol</p>
     <h1>${tipoMeta.emoji || ''} Inspección de ${tipoMeta.label || inspeccion.tipo}</h1>
     <p>${inspeccion.empresa?.razon_social || '—'} &nbsp;·&nbsp; ${fechaFmt}</p>
   </div>
@@ -286,7 +286,7 @@ foto{max-width:240px;max-height:160px;border-radius:8px;border:1px solid #e2e8f0
   </div>`).join('')}
   ${inspeccion.observacionGeneral?`<div class="obs"><strong>Observación general:</strong><br><span style="color:#475569">${inspeccion.observacionGeneral}</span></div>`:''}
   <div class="foot">
-    <div><p style="font-size:11px;color:#94a3b8">GEPPI v2.0 · ${new Date().toLocaleString('es-CO')}</p></div>
+    <div><p style="font-size:11px;color:#94a3b8">SST Fombisol · ${new Date().toLocaleString('es-CO')}</p></div>
     <div style="text-align:right"><div class="firma">Firma del Inspector</div></div>
   </div>
 </div></body></html>`)

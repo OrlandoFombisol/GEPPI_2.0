@@ -326,7 +326,7 @@ export default function Page() {
               <div className="flex flex-wrap gap-2 pt-1">
                 <Badge variant="success">Base local activa</Badge>
                 <Badge variant="info">LAN disponible</Badge>
-                <Badge variant="primary">GEPPI v{SISTEMA.VERSION}</Badge>
+                <Badge variant="primary">SST Fombisol v{SISTEMA.VERSION}</Badge>
               </div>
             </div>
           )}

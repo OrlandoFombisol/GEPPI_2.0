@@ -34,7 +34,7 @@ export default function TarjetaQRModal({ trabajador, cargoNombre, sedeNombre, on
     const w = window.open('', '_blank', 'width=420,height=600')
     if (!w) return
     w.document.write(`
-      <html><head><title>Tarjeta GEPPI</title>
+      <html><head><title>Tarjeta SST Fombisol</title>
       <style>
         @page { size: 85mm 54mm; margin: 0; }
         body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #fff; }
@@ -67,7 +67,7 @@ export default function TarjetaQRModal({ trabajador, cargoNombre, sedeNombre, on
       <div class="card">
         <div class="qr"><img src="${qrUrl}" alt="QR" /></div>
         <div class="info">
-          <div class="logo-text">GEPPI · EPP</div>
+          <div class="logo-text">SST Fombisol</div>
           <div class="name">${trabajador.nombres}<br/>${trabajador.apellidos}</div>
           <div class="cargo">${cargoNombre || '—'}</div>
           <div class="cedula">CC ${trabajador.cedula}</div>
@@ -121,7 +121,7 @@ export default function TarjetaQRModal({ trabajador, cargoNombre, sedeNombre, on
           )}
           <div style={{ flex: 1, minWidth: 0, color: 'white' }}>
             <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.18em', color: '#93c5fd', marginBottom: 4 }}>
-              GEPPI · EPP
+              SST Fombisol
             </p>
             <p style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.25, marginBottom: 4 }}>
               {trabajador.nombres}<br />{trabajador.apellidos}

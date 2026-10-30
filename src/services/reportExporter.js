@@ -127,7 +127,7 @@ export async function generarReporteEntregas({ sedeId, desde, hasta } = {}) {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, crearHoja(filas, anchos), 'Entregas')
   XLSX.utils.book_append_sheet(wb, hojaMetadatos(empresa), 'Info')
-  descargar(wb, 'Reporte_Entregas_GEPPI')
+  descargar(wb, 'Reporte_Entregas_SST_Fombisol')
   return filas.length
 }
 
@@ -198,7 +198,7 @@ export async function generarReporteEstadoEPP({ sedeId } = {}) {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, crearHoja(filas, anchos), 'Estado EPP')
   XLSX.utils.book_append_sheet(wb, hojaMetadatos(empresa), 'Info')
-  descargar(wb, 'Estado_EPP_Trabajadores_GEPPI')
+  descargar(wb, 'Estado_EPP_Trabajadores_SST_Fombisol')
   return filas.length
 }
 
@@ -236,7 +236,7 @@ export async function generarReporteInventario({ sedeId } = {}) {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, crearHoja(filas, anchos), 'Inventario')
   XLSX.utils.book_append_sheet(wb, hojaMetadatos(empresa), 'Info')
-  descargar(wb, 'Inventario_EPP_GEPPI')
+  descargar(wb, 'Inventario_EPP_SST_Fombisol')
   return filas.length
 }
 
@@ -317,6 +317,6 @@ export async function generarReporteCumplimiento({ sedeId } = {}) {
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumen), 'Resumen')
   XLSX.utils.book_append_sheet(wb, crearHoja(detalle, [12,28,24,20,14,12,12,14,28].map(w=>({wch:w}))), 'Detalle')
   XLSX.utils.book_append_sheet(wb, hojaMetadatos(empresa), 'Info')
-  descargar(wb, 'Cumplimiento_SST_GEPPI')
+  descargar(wb, 'Cumplimiento_SST_SST_Fombisol')
   return { total: activos.length, cumpleTodos, tieneVencido, tienePendiente, pct }
 }

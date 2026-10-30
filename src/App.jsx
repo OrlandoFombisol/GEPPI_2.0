@@ -94,7 +94,7 @@ function AppLoader() {
       {/* Marca de agua fondo */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         <img
-          src="/logo.jpg" alt=""
+          src="/logo.png" alt=""
           style={{
             position: 'absolute', bottom: -50, right: -40,
             width: 380, opacity: 0.06, transform: 'rotate(-6deg)',
@@ -118,7 +118,7 @@ function AppLoader() {
       <div style={{ position: 'relative' }}>
         <img
           src="/logo.jpg"
-          alt="GEPPI — Gestión de EPP"
+          alt="SST Fombisol"
           style={{ height: 80, width: 'auto', objectFit: 'contain' }}
         />
       </div>

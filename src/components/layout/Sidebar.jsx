@@ -117,7 +117,7 @@ function GeppiLogo({ collapsed }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: collapsed ? 5 : 7, position: 'relative', zIndex: 2,
       }}>
-        <img src={logoPng} alt="GEPPI" draggable={false}
+        <img src={logoPng} alt="SST Fombisol" draggable={false}
           style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       </div>
     </motion.div>
@@ -459,7 +459,7 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
                   transition={{ duration: 0.22 }} style={{ minWidth: 0, overflow: 'hidden' }}
                 >
                   <p style={{
-                    margin: 0, fontSize: 17, fontWeight: 900, letterSpacing: '0.13em', lineHeight: 1,
+                    margin: 0, fontSize: 16, fontWeight: 900, letterSpacing: '0.04em', lineHeight: 1, whiteSpace: 'nowrap',
                     background: 'linear-gradient(90deg,#39B54A,#1b62cc,#F7941D)',
                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
                   }}>{SISTEMA.NOMBRE}</p>

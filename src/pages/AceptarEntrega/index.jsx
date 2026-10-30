@@ -163,10 +163,10 @@ export default function AceptarEntrega() {
         <div className="max-w-lg mx-auto px-4 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white p-1.5 flex-shrink-0">
-              <img src={logoPng} alt="GEPPI" className="w-full h-full object-contain" />
+              <img src={logoPng} alt="SST Fombisol" className="w-full h-full object-contain" />
             </div>
             <div>
-              <p className="text-xs font-bold tracking-widest text-blue-300 uppercase">GEPPI</p>
+              <p className="text-xs font-bold tracking-widest text-blue-300 uppercase">SST Fombisol</p>
               <p className="text-sm font-semibold leading-tight">Acta de Entrega de EPP</p>
             </div>
           </div>

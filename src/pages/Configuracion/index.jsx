@@ -51,7 +51,7 @@ function SeccionRespaldo() {
         datos,
       }
       const fecha = new Date().toISOString().slice(0, 10)
-      descargarBlob(JSON.stringify(respaldo, null, 2), `GEPPI_respaldo_${fecha}.json`)
+      descargarBlob(JSON.stringify(respaldo, null, 2), `SST_Fombisol_respaldo_${fecha}.json`)
       setMsgExito('Respaldo descargado correctamente.')
     } catch (err) {
       setMsgError(`Error al exportar: ${err.message}`)
@@ -67,7 +67,7 @@ function SeccionRespaldo() {
     try {
       const texto    = await file.text()
       const respaldo = JSON.parse(texto)
-      if (!respaldo?.datos) throw new Error('El archivo no parece un respaldo válido de GEPPI.')
+      if (!respaldo?.datos) throw new Error('El archivo no parece un respaldo válido de SST Fombisol.')
 
       for (const [nombre, registros] of Object.entries(respaldo.datos)) {
         if (!dbSchema[nombre]) continue
@@ -112,7 +112,7 @@ function SeccionRespaldo() {
           <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-100 rounded-xl">
             <Upload size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800">
-              Restaura desde un archivo JSON generado por GEPPI.
+              Restaura desde un archivo JSON generado por SST Fombisol.
               <strong> Reemplazará todos los datos actuales.</strong>
             </p>
           </div>
@@ -172,7 +172,7 @@ function SeccionInfo() {
 
   const INFO = [
     ['Sistema',              SISTEMA.NOMBRE_COMPLETO     ],
-    ['Versión GEPPI',        `v${SISTEMA.VERSION}`       ],
+    ['Versión SST Fombisol',        `v${SISTEMA.VERSION}`       ],
     ['Matriz referencia',    SISTEMA.CODIGO_DOCUMENTO     ],
     ['Versión de la Matriz', `v${SISTEMA.VERSION_MATRIZ}` ],
     ['Responsable matriz',   SISTEMA.RESPONSABLE_MATRIZ   ],
@@ -182,7 +182,7 @@ function SeccionInfo() {
   ]
 
   return (
-    <Card title="Información del sistema" subtitle={`GEPPI v${SISTEMA.VERSION}`}>
+    <Card title="Información del sistema" subtitle={`SST Fombisol v${SISTEMA.VERSION}`}>
       <div className="grid sm:grid-cols-2 gap-6">
 
         {/* Tabla de información */}

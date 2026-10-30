@@ -11,7 +11,7 @@ export default function NotFound() {
         Página no encontrada
       </h1>
       <p className="text-slate-500 text-sm mb-8 max-w-sm">
-        La ruta que buscas no existe en GEPPI. Puede que el módulo esté en construcción
+        La ruta que buscas no existe en SST Fombisol. Puede que el módulo esté en construcción
         o que la URL sea incorrecta.
       </p>
       <Link

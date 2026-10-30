@@ -510,7 +510,7 @@ export default function ImportarExcel() {
             <div>
               <p className="font-semibold text-green-900 text-base">¡Importación completada con éxito!</p>
               <p className="text-sm text-green-700 mt-0.5">
-                Los datos de la Matriz MT-SST-005 han sido sincronizados en GEPPI.
+                Los datos de la Matriz MT-SST-005 han sido sincronizados en SST Fombisol.
               </p>
             </div>
           </div>

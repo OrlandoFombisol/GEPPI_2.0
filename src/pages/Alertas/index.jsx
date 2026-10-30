@@ -595,7 +595,7 @@ export default function Page() {
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
             {criticos > 0 && <span className="text-red-600 font-medium">{criticos} crítica{criticos !== 1 ? 's' : ''} · </span>}
-            Centro de notificaciones del sistema GEPPI.
+            Centro de notificaciones del sistema SST Fombisol.
           </p>
         </div>
 

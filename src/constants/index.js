@@ -1,7 +1,7 @@
 // ─── IDENTIFICACIÓN DEL SISTEMA ─────────────────────────────────────────────
 
 export const SISTEMA = {
-  NOMBRE:             'GEPPI',
+  NOMBRE:             'SST Fombisol',
   NOMBRE_COMPLETO:    'Gestión de Elementos de Protección Personal Integrado',
   VERSION:            '1.0.0',
   EMPRESA_CLIENTE:    'Corporación para el Fomento del Bienestar Social',

@@ -82,7 +82,7 @@ function construirHtmlImpresion(dias, generadoEnTexto) {
   `).join('')
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>Mejora Continua — GEPPI</title>
+<title>Mejora Continua — SST Fombisol</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1e293b;padding:28px}
@@ -98,7 +98,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#1e293b;paddin
 @media print{@page{margin:14mm}}
 </style></head><body>
 <div class="hdr">
-  <h1>Mejora Continua — GEPPI</h1>
+  <h1>Mejora Continua — SST Fombisol</h1>
   <p>Historial de mejoras y trabajo realizado sobre la plataforma</p>
 </div>
 ${filasDias}
