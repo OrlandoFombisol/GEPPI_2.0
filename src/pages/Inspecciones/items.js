@@ -8,24 +8,46 @@ export const TIPOS_INSPECCION = [
 
 export const ITEMS_POR_TIPO = {
   EXTINTORES: [
-    { id: 'ubicacion_accesible',    label: 'Ubicación visible y accesible' },
-    { id: 'señalizacion',           label: 'Señalización adecuada' },
-    { id: 'manometro_verde',        label: 'Manómetro en zona verde (cargado)' },
-    { id: 'pasador_seguridad',      label: 'Pasador (pin) en su lugar y sello intacto' },
-    { id: 'sin_daños',              label: 'Sin daños físicos (abolladuras, corrosión)' },
-    { id: 'recarga_vigente',        label: 'Fecha de recarga vigente' },
-    { id: 'etiqueta_inspeccion',    label: 'Etiqueta de inspección al día' },
-    { id: 'manguera_estado',        label: 'Manguera y boquilla en buen estado' },
+    { id: 'ubicacion_accesible',    label: 'Ubicado en su sitio, a la vista y con acceso libre' },
+    { id: 'señalizacion',           label: 'Señalización visible (fotoluminiscente donde haya poca luz)' },
+    { id: 'proteccion_intemperie',  label: 'Protegido del sol, la lluvia y el salitre' },
+    { id: 'manometro_verde',        label: 'Manómetro en zona verde y aguja libre' },
+    { id: 'pasador_seguridad',      label: 'Pasador y precinto completos' },
+    { id: 'sin_daños',              label: 'Cilindro sin corrosión por salitre ni abolladuras' },
+    { id: 'manguera_estado',        label: 'Manguera sin resecamiento y boquilla destapada' },
+    { id: 'agente_adecuado',        label: 'Agente adecuado al riesgo (K en cocinas, CO₂ en tableros)' },
+    { id: 'recarga_vigente',        label: 'Recarga vigente (máx. 12 meses)' },
+    { id: 'etiqueta_inspeccion',    label: 'Tarjeta de inspección mensual firmada' },
   ],
   BOTIQUIN: [
-    { id: 'ubicacion_conocida',     label: 'Ubicación conocida por el personal' },
-    { id: 'contenido_completo',     label: 'Contenido completo según dotación mínima' },
-    { id: 'sin_vencidos',           label: 'Medicamentos e insumos sin vencer' },
-    { id: 'guantes_disponibles',    label: 'Guantes de examen disponibles' },
-    { id: 'gasa_vendas',            label: 'Gasas, vendas y apósitos suficientes' },
-    { id: 'antisepticos',           label: 'Antisépticos (alcohol, agua oxigenada)' },
-    { id: 'tijeras_pinzas',         label: 'Tijeras y pinzas en buen estado' },
-    { id: 'registro_uso',           label: 'Registro de uso actualizado' },
+    // Ubicación y control
+    { id: 'ubicacion_senalizada',   label: 'Botiquín señalizado, a la vista y sin llave ni candado' },
+    { id: 'lugar_fresco',           label: 'En lugar fresco y seco: lejos del sol, del fogón y de la humedad' },
+    { id: 'responsable_brigadista', label: 'Brigadista o responsable de turno identificado' },
+    { id: 'registro_uso',           label: 'Registro de uso y reposición diligenciado' },
+    { id: 'directorio_emergencia',  label: 'Directorio a la vista: 123, ARL, EPS y centro de salud más cercano' },
+    // Curación de heridas
+    { id: 'gasas_esteriles',        label: 'Gasas estériles y apósitos (mín. 10 sobres)' },
+    { id: 'vendas_elasticas',       label: 'Vendas elásticas de 2", 3" y 5" y venda triangular' },
+    { id: 'esparadrapo_curitas',    label: 'Esparadrapo, micropore y curitas suficientes' },
+    { id: 'solucion_salina',        label: 'Solución salina para lavar heridas y ojos' },
+    { id: 'antiseptico',            label: 'Antiséptico (yodopovidona o clorhexidina) sin vencer' },
+    // Cocinas y planta (quemaduras y cortes)
+    { id: 'quemaduras',             label: 'Gel o apósitos para quemaduras (cocinas, fogones y freidoras)' },
+    { id: 'guantes_nitrilo',        label: 'Guantes de nitrilo (no látex) en varias tallas' },
+    { id: 'tijeras_pinzas',         label: 'Tijeras de punta roma, pinzas y termómetro digital' },
+    // Calor y clima del Caribe
+    { id: 'suero_oral',             label: 'Sales de rehidratación oral para golpe de calor y deshidratación' },
+    { id: 'repelente',              label: 'Repelente de insectos (dengue y chikunguña)' },
+    { id: 'bloqueador',             label: 'Bloqueador solar para trabajo al aire libre (rutas, cargue y descargue)' },
+    { id: 'compresas_frias',        label: 'Compresas frías instantáneas' },
+    // Inmovilización y protección
+    { id: 'inmovilizacion',         label: 'Inmovilizadores o férulas y collar cervical (planta y bodegas)' },
+    { id: 'tapabocas_rcp',          label: 'Tapabocas y máscara para RCP' },
+    { id: 'bolsa_roja',             label: 'Bolsa roja para residuos biológicos' },
+    // Estado general
+    { id: 'sin_vencidos',           label: 'Ningún insumo vencido, húmedo ni con el empaque roto' },
+    { id: 'sin_medicamentos',       label: 'Sin medicamentos de venta libre sin control (solo lo autorizado por SST)' },
   ],
   EPP: [
     { id: 'epp_entregados',         label: 'EPP entregados según cargo y MIPER' },

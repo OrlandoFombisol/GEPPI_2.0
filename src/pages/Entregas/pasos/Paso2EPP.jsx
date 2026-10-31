@@ -1,26 +1,40 @@
 import { useState, useEffect } from 'react'
 import { Loader2, AlertTriangle } from 'lucide-react'
-import { asignacionDB, eppDB, inventarioDB } from '@/db'
+import { asignacionDB, eppDB, inventarioDB, sedeDB } from '@/db'
 import { calcularFechaVencimiento, toISODate, formatearFecha } from '@/utils/dates'
 import { AlertBanner, Button }               from '@/components/ui'
 
 export default function Paso2EPP({ trabajador, cargo, eppItemsInicial, onNext, onAnterior }) {
   const [items,    setItems]    = useState(eppItemsInicial || [])
   const [cargando, setCargando] = useState(true)
+  // Bodega o sede desde donde salen los EPP: la del trabajador si la tiene; si no, la que tenga inventario
+  const [sedes,       setSedes]       = useState([])
+  const [sedeEntrega, setSedeEntrega] = useState(trabajador?.sedeId || null)
 
   useEffect(() => {
-    if (eppItemsInicial?.length) { setCargando(false); return }
-    cargarEPP()
+    Promise.all([sedeDB.getAll(), inventarioDB.getAll()]).then(([sds, inv]) => {
+      const conStock = new Set((inv || []).filter(i => (i.stockActual ?? 0) > 0).map(i => i.sedeId))
+      const lista = (sds || []).map(s => ({ ...s, conStock: conStock.has(s.id) }))
+      setSedes(lista)
+      if (!sedeEntrega) setSedeEntrega(lista.find(s => s.conStock)?.id || lista[0]?.id || null)
+    }).catch(console.error)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function cargarEPP() {
+  useEffect(() => {
+    if (eppItemsInicial?.length && sedeEntrega === trabajador?.sedeId) { setCargando(false); return }
+    if (!sedeEntrega) return
+    cargarEPP(sedeEntrega)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sedeEntrega])
+
+  async function cargarEPP(sedeId) {
     setCargando(true)
     try {
       const [asigs, todosEPP, invSede] = await Promise.all([
         asignacionDB.getEppPorCargo(cargo.id),
         eppDB.getAll(),
-        inventarioDB.getPorSede(trabajador.sedeId),
+        inventarioDB.getPorSede(sedeId),
       ])
 
       const eppMap = Object.fromEntries((todosEPP || []).map(e => [e.id, e]))
@@ -94,6 +108,15 @@ export default function Paso2EPP({ trabajador, cargo, eppItemsInicial, onNext, o
           Selecciona los EPP a entregar y ajusta las cantidades.
         </p>
       </div>
+
+      <label className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+        <span className="font-medium">Se entrega desde</span>
+        <select value={sedeEntrega || ''} onChange={e => setSedeEntrega(Number(e.target.value) || null)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800">
+          {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}{s.conStock ? '' : ' (sin inventario)'}</option>)}
+        </select>
+        <span className="text-xs text-slate-400">El inventario se descuenta de esta bodega.</span>
+      </label>
 
       {sinStock.length > 0 && (
         <AlertBanner level="warning"
@@ -185,7 +208,7 @@ export default function Paso2EPP({ trabajador, cargo, eppItemsInicial, onNext, o
 
       <div className="flex justify-between">
         <Button variant="secondary" onClick={onAnterior}>← Anterior</Button>
-        <Button onClick={() => onNext({ eppItems: incluidos })} disabled={!puedeAvanzar}>
+        <Button onClick={() => onNext({ eppItems: incluidos, sedeId: sedeEntrega })} disabled={!puedeAvanzar}>
           Siguiente →
         </Button>
       </div>

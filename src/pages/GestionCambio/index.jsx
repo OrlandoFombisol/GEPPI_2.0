@@ -83,9 +83,11 @@ export default function Page() {
   const guardar = async (datos) => {
     setSaving(true)
     try {
-      await gestionCambioDB.create(datos)
+      await gestionCambioDB.create({ ...datos, modulo: datos.modulo || null, fecha: datos.fecha || null })
       setModal(false)
       await cargar()
+    } catch (err) {
+      alert(`No se pudo registrar el cambio: ${err.message}`)
     } finally {
       setSaving(false)
     }

@@ -66,7 +66,7 @@ const ITEMS_EXTINTOR_LABELS = {
   L: 'Mango y palanca en buen estado',
   M: 'Válvula en posición de operación',
 }
-const ITEM_IDS = ['A','B','C','D','E','F','G','H','I','J','K','L','M']
+const ITEM_IDS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N']
 
 export default function InspeccionDetalle({ inspeccion, onVolver }) {
   if (!inspeccion) return null

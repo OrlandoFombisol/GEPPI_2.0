@@ -105,8 +105,9 @@ export default function NuevaEntrega({ onCancelar, onCompletado }) {
     actualizar({ trabajador, cargo, eppItems: [] })
     setPaso(2)
   }
-  const paso2Next = ({ eppItems }) => {
-    actualizar({ eppItems })
+  const paso2Next = ({ eppItems, sedeId }) => {
+    // La bodega elegida es la sede de la entrega (de ahí se descuenta el inventario)
+    actualizar({ eppItems, trabajador: { ...datos.trabajador, sedeId: sedeId ?? datos.trabajador?.sedeId } })
     setPaso(3)
   }
   const paso3Next = ({ firmaBase64, modoQR, entregaId }) => {

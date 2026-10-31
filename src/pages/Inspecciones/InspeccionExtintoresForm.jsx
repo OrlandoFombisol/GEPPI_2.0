@@ -5,19 +5,23 @@ import { BackButton } from '@/components/ui'
 import { useUser } from '@/contexts/UserContext'
 
 const ITEMS_EXTINTOR = [
-  { id: 'A', label: 'Está ubicado en el lugar designado y accesible' },
-  { id: 'B', label: 'Tiene señalización visible' },
-  { id: 'C', label: 'El acceso se encuentra libre de obstáculos' },
-  { id: 'D', label: 'Los precintos y sellos están colocados y en buen estado' },
-  { id: 'E', label: 'El pasador de seguridad está en su lugar' },
-  { id: 'F', label: 'La presión es correcta (manómetro en zona verde)' },
-  { id: 'G', label: 'El manómetro se encuentra en buen estado' },
-  { id: 'H', label: 'Manguera de descarga y boquilla en buen estado' },
-  { id: 'I', label: 'Estado general del cilindro (sin golpes ni corrosión)' },
-  { id: 'J', label: 'Tiene instrucciones de operación visibles' },
-  { id: 'K', label: 'Tarjeta de inspección marcada y actualizada' },
-  { id: 'L', label: 'Mango y palanca en buen estado' },
-  { id: 'M', label: 'Válvula de operación en posición correcta' },
+  // Ubicación y acceso
+  { id: 'A', label: 'Ubicado en su sitio, a la vista y con la parte superior a máx. 1,50 m del piso' },
+  { id: 'B', label: 'Acceso libre: sin canastas, estibas, mercancía ni motos delante' },
+  { id: 'C', label: 'Señal de extintor visible y vigente (fotoluminiscente donde haya poca luz)' },
+  { id: 'D', label: 'Protegido del sol directo, la lluvia y el salitre (gabinete o techo)' },
+  // Estado del equipo
+  { id: 'E', label: 'Manómetro en zona verde y con la aguja libre (no pegada)' },
+  { id: 'F', label: 'Pasador y precinto de seguridad completos' },
+  { id: 'G', label: 'Cilindro sin corrosión, óxido por salitre, abolladuras ni pintura levantada' },
+  { id: 'H', label: 'Manguera sin grietas ni resecamiento por calor; boquilla destapada (sin nidos ni insectos)' },
+  { id: 'I', label: 'Manija y palanca completas y sin deformación' },
+  { id: 'J', label: 'Agente adecuado al riesgo del área (K en cocinas, CO₂ en tableros, ABC general)' },
+  // Documentación
+  { id: 'K', label: 'Etiqueta de recarga vigente (máx. 12 meses) con fecha y empresa recargadora' },
+  { id: 'L', label: 'Prueba hidrostática al día (cada 5 años) y anotada en el cilindro' },
+  { id: 'M', label: 'Tarjeta de inspección mensual firmada' },
+  { id: 'N', label: 'Instrucciones de uso legibles en español' },
 ]
 
 const RES = [
@@ -86,7 +90,7 @@ export default function InspeccionExtintoresForm({ empresas = [], usuarioId, onG
       })
       await recargarExtintores()
       setNuevoTipo(''); setNuevaUbic(''); setShowAddExt(false)
-    } catch (e) { console.error(e) } finally { setAgregando(false) }
+    } catch (e) { setError('No se pudo agregar el extintor: ' + e.message) } finally { setAgregando(false) }
   }
 
   const eliminarExtintor = async (id) => {

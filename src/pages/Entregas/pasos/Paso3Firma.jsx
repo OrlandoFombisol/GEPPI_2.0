@@ -8,7 +8,8 @@ import QRCode from 'qrcode'
 export default function Paso3Firma({ trabajador, cargo, eppItems, onNext, onAnterior, onGenerarEntregaPendiente }) {
   const firmaRef   = useRef(null)
   const [hasFirma, setHasFirma] = useState(false)
-  const [modo,     setModo]     = useState('presencial') // 'presencial' | 'qr'
+  // Lo normal es que el trabajador firme en su celular escaneando el QR; la firma en pantalla es la alterna
+  const [modo,     setModo]     = useState('qr') // 'qr' | 'presencial'
 
   // Estado QR
   const [qrGenerando, setQrGenerando] = useState(false)
@@ -76,18 +77,6 @@ export default function Paso3Firma({ trabajador, cargo, eppItems, onNext, onAnte
       {/* ── Selector de modo ── */}
       <div className="flex gap-1 p-1 bg-slate-100 rounded-xl">
         <button
-          onClick={() => setModo('presencial')}
-          disabled={!!qrData}
-          className={[
-            'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all',
-            modo === 'presencial'
-              ? 'bg-white shadow text-primary-800'
-              : 'text-slate-500 hover:text-slate-700 disabled:opacity-40',
-          ].join(' ')}
-        >
-          ✏️ Firma aquí
-        </button>
-        <button
           onClick={() => { setModo('qr'); generarQR() }}
           disabled={firmada}
           className={[
@@ -97,7 +86,19 @@ export default function Paso3Firma({ trabajador, cargo, eppItems, onNext, onAnte
               : 'text-slate-500 hover:text-slate-700',
           ].join(' ')}
         >
-          <QrCode size={15} /> Firmar por QR
+          <QrCode size={15} /> En el celular del trabajador
+        </button>
+        <button
+          onClick={() => setModo('presencial')}
+          disabled={!!qrData}
+          className={[
+            'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all',
+            modo === 'presencial'
+              ? 'bg-white shadow text-primary-800'
+              : 'text-slate-500 hover:text-slate-700 disabled:opacity-40',
+          ].join(' ')}
+        >
+          ✏️ Firma en esta pantalla
         </button>
       </div>
 
@@ -120,6 +121,14 @@ export default function Paso3Firma({ trabajador, cargo, eppItems, onNext, onAnte
       {/* ── Modo QR ── */}
       {modo === 'qr' && (
         <div className="space-y-4">
+
+          {!qrData && !qrGenerando && (
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <QrCode size={36} className="text-primary-600" />
+              <p className="text-sm text-slate-600 max-w-sm">El trabajador escanea el código con la cámara de su celular, ve el acta con sus datos y los EPP, y firma ahí mismo.</p>
+              <Button onClick={generarQR}>Mostrar el QR</Button>
+            </div>
+          )}
 
           {/* Generando */}
           {qrGenerando && (
