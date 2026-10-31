@@ -110,13 +110,11 @@ export default function Operario() {
       })
   }, [])
 
-  // Cargar trabajadores al seleccionar empresa — solo conductores (cargo 64=CONDUCTOR I, 65=CONDUCTOR II)
+  // Cargar los conductores de la empresa (los que tienen cargo Conductor), con la función segura de la base
   useEffect(() => {
     if (!empresaId) { setTrabajadores([]); setTrabajadorId(''); return }
-    supabase.from('trabajador').select('id, nombres, apellidos')
-      .eq('empresa_id', Number(empresaId)).eq('estado', 'ACTIVO')
-      .in('cargo_id', [64, 65])
-      .order('apellidos')
+    // Solo los conductores activos de esa empresa (función segura: sin sesión no se listan trabajadores)
+    supabase.rpc('conductores_de_empresa', { p_empresa: Number(empresaId) })
       .then(({ data }) => setTrabajadores(data || []))
   }, [empresaId])
 
@@ -126,14 +124,10 @@ export default function Operario() {
     if (!cedula.trim()) return setErrorAuth('Ingresa tu número de cédula.')
     setErrorAuth(''); setCargando(true)
     try {
-      const { data, error } = await supabase
-        .from('trabajador')
-        .select('id, nombres, apellidos, cargo_id')
-        .eq('id', Number(trabajadorId))
-        .eq('empresa_id', Number(empresaId))
-        .eq('cedula', String(cedula.trim()))
-        .in('cargo_id', [64, 65])
-        .single()
+      const { data: filas, error } = await supabase.rpc('validar_conductor', {
+        p_trabajador: Number(trabajadorId), p_empresa: Number(empresaId), p_cedula: String(cedula.trim()),
+      })
+      const data = filas?.[0]
       if (error || !data) {
         setErrorAuth('Cédula incorrecta. Verifica tus datos o consulta con tu SISO.')
         return

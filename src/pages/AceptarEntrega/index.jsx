@@ -4,7 +4,7 @@ import {
   CheckCircle2, ShieldCheck, AlertTriangle, Loader2,
   User, Calendar, MapPin, Briefcase, Package,
 } from 'lucide-react'
-import { eppDB, empresaDB, trabajadorDB, cargoDB, sedeDB, entregaDB, detalleEntregaDB } from '@/db'
+import { entregaDB } from '@/db'
 import { formatearFecha, formatearFechaLarga }             from '@/utils/dates'
 import { formatearNumeroActa }                             from '@/utils/formatters'
 import { FirmaCanvas }                                     from '@/components/firma'
@@ -104,25 +104,12 @@ export default function AceptarEntrega() {
 
   async function cargar() {
     try {
-      const entrega = await entregaDB.getByToken(token)
-      if (!entrega) { setError('El enlace no es válido o ha expirado.'); setFase('error'); return }
+      const acta = await entregaDB.actaPorToken(token)
+      if (!acta) { setError('El enlace no es válido o ha expirado.'); setFase('error'); return }
+      const { entrega, trabajador, cargo, sede, empresa, detalles } = acta
       if (entrega.estado === 'FIRMADA') { setFase('ya_firmada'); return }
 
-      const [trabajador, cargo, sede, empresa, detalles, todosEPP] = await Promise.all([
-        trabajadorDB.getById(entrega.trabajadorId),
-        cargoDB.getById(entrega.cargoId),
-        sedeDB.getById(entrega.sedeId),
-        empresaDB.getById(entrega.empresaId),
-        detalleEntregaDB.getPorEntrega(entrega.id),
-        eppDB.getAll(),
-      ])
-
-      const eppMap = Object.fromEntries((todosEPP || []).map(e => [e.id, e]))
-      const epps   = detalles.map(d => ({
-        ...d,
-        eppNombre:  eppMap[d.eppId]?.nombre    || '—',
-        esDotacion: eppMap[d.eppId]?.esDotacion || false,
-      }))
+      const epps = detalles.map(d => ({ ...d, eppNombre: d.eppNombre || '—', esDotacion: d.esDotacion || false }))
 
       setDatos({
         entrega, trabajador, cargo, sede, empresa, epps,

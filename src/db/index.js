@@ -486,24 +486,23 @@ export const entregaDB = {
   async marcarPdfGenerado(id) {
     // campo legacy — no existe en v2, ignorar silenciosamente
   },
+  // Sin sesión: el trabajador solo ve y firma su propia acta (funciones seguras de la base)
+  async actaPorToken(token) {
+    const data = await q('entrega.actaPorToken', supabase.rpc('acta_por_token', { p_token: token }))
+    if (!data) return null
+    return {
+      entrega:    fromDB(data.entrega),
+      trabajador: fromDB(data.trabajador),
+      cargo:      fromDB(data.cargo),
+      sede:       fromDB(data.sede),
+      empresa:    fromDB(data.empresa),
+      detalles:   (data.detalles || []).map(fromDB),
+    }
+  },
   async aceptarConToken(token, firmaBase64) {
-    const entrega = await this.getByToken(token)
-    if (!entrega) throw new Error('Token inválido o ya expirado.')
-    if (entrega.estado === 'FIRMADA') throw new Error('Esta entrega ya fue aceptada.')
-    await q('entrega.aceptarConToken.update',
-      supabase.from('entrega').update({
-        estado:           'FIRMADA',
-        fecha_aceptacion: new Date().toISOString(),
-      }).eq('token_aceptacion', token))
-    await q('entrega.aceptarConToken.firma',
-      supabase.from('firma').insert({
-        entrega_id:   entrega.id,
-        firma_base64: firmaBase64,
-        fecha_captura: new Date().toISOString(),
-        dispositivo:  navigator.userAgent || 'Desconocido',
-        origen_qr:    true,
-      }))
-    return entrega.id
+    return q('entrega.aceptarConToken', supabase.rpc('firmar_acta', {
+      p_token: token, p_firma: firmaBase64, p_dispositivo: navigator.userAgent || 'Desconocido',
+    }))
   },
 }
 
