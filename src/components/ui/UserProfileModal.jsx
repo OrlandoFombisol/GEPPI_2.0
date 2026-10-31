@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Camera, User, Mail, Briefcase, Save, LogOut, AlertCircle } from 'lucide-react'
 import { useUser } from '@/contexts/UserContext'
 import { useNavigate } from 'react-router-dom'
-import { ROL_LABEL } from '@/constants'
+import { ROL_LABEL, SISTEMA } from '@/constants'
 
 const ROLES = ['ADMINISTRADOR', 'SUPERVISOR', 'OPERADOR', 'AUDITOR']
 
@@ -112,6 +112,16 @@ export default function UserProfileModal({ open, onClose }) {
             </div>
 
             <div style={{ padding: '20px' }}>
+              {/* Estado del sistema y versión de la matriz (antes al pie del menú lateral) */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16,
+                fontSize: 11, color: 'var(--theme-text-faint)',
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
+                <span style={{ fontWeight: 700, color: '#16a34a' }}>Sistema activo</span>
+                <span>·</span>
+                <span>{SISTEMA.CODIGO_DOCUMENTO} · v{SISTEMA.VERSION_MATRIZ}</span>
+              </div>
               {/* Avatar */}
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 22 }}>
                 <div style={{ position: 'relative' }}>

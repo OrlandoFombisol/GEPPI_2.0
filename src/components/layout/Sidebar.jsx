@@ -1,9 +1,9 @@
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence }   from 'framer-motion'
 import { useState, useEffect }       from 'react'
 import {
   // layout
-  ChevronLeft, ChevronDown, X, LogOut,
+  ChevronLeft, ChevronDown, X,
   // nav items
   LayoutDashboard,
   Building2, UserCheck, Briefcase,
@@ -296,52 +296,10 @@ function SectionHeader({ label, sectionColor, open, onToggle, hasActive }) {
   )
 }
 
-// ─── Usuario actual ───────────────────────────────────────────────────────────
-const ROL_COLOR = { ADMINISTRADOR: '#A78BFA', COLABORADOR: '#60A5FA', SST: '#4ADE80' }
-function iniciales(n) { return (n || '?').split(' ').slice(0, 2).map(p => p[0] || '').join('').toUpperCase() }
-
-function UsuarioActual({ collapsed }) {
-  const { user } = useUser()
-  const color = ROL_COLOR[user?.rol] || '#60A5FA'
-  return (
-    <div style={{ padding: collapsed ? '6px 6px 2px' : '6px 10px 2px' }}>
-      <div style={{
-        display: 'flex', alignItems: 'center',
-        justifyContent: collapsed ? 'center' : 'flex-start',
-        gap: 10, padding: collapsed ? '8px 0' : '8px 10px',
-        borderRadius: 11, border: '1px solid rgba(255,255,255,0.07)',
-        background: 'rgba(255,255,255,0.035)',
-      }}>
-        <div style={{
-          width: 30, height: 30, borderRadius: 9, flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: `${color}25`, border: `1.5px solid ${color}50`,
-          fontSize: 11, fontWeight: 900, color,
-        }}>
-          {iniciales(user?.nombre)}
-        </div>
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.div initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-              style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.82)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {user?.nombre || 'Usuario'}
-              </p>
-              <p style={{ margin: 0, fontSize: 10, color, whiteSpace: 'nowrap', fontWeight: 600, opacity: 0.75 }}>
-                {user?.rol || ''}
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  )
-}
 
 // ─── Sidebar principal ────────────────────────────────────────────────────────
 export default function Sidebar({ open, onClose, collapsed, onToggle }) {
-  const { user, logout } = useUser()
-  const navigate         = useNavigate()
+  const { user } = useUser()
   const location         = useLocation()
   const isAdmin          = user?.rol === 'ADMINISTRADOR'
   const [alertCount, setAlertCount] = useState(0)
@@ -541,56 +499,6 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
           })}
         </nav>
 
-        {/* ── Footer ───────────────────────────────────────────────────────── */}
-        <div style={{ position: 'relative', zIndex: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.div key="footer-info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                style={{ padding: '10px 14px 6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-                  <motion.div animate={{ scale: [1, 1.6, 1], opacity: [1, 0.4, 1] }} transition={{ duration: 2.4, repeat: Infinity }}
-                    style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80', flexShrink: 0 }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(74,222,128,0.70)', letterSpacing: '0.05em' }}>Sistema activo</span>
-                </div>
-                <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
-                  <span style={{ color: 'rgba(147,197,253,0.55)' }}>{SISTEMA.CODIGO_DOCUMENTO}</span> · v{SISTEMA.VERSION_MATRIZ}
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <UsuarioActual collapsed={collapsed} />
-
-          {/* Cerrar sesión */}
-          <div style={{ padding: collapsed ? '4px 6px 12px' : '4px 8px 12px' }}>
-            <motion.button onClick={() => logout(navigate)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center',
-                justifyContent: collapsed ? 'center' : 'flex-start',
-                gap: 10, padding: collapsed ? '10px 0' : '8px 10px',
-                borderRadius: 11, border: '1px solid rgba(248,113,113,0.18)',
-                background: 'rgba(220,38,38,0.07)', cursor: 'pointer', transition: 'all 0.18s',
-              }}
-              onMouseOver={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.16)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.35)' }}
-              onMouseOut={e  => { e.currentTarget.style.background = 'rgba(220,38,38,0.07)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.18)' }}
-              title="Cerrar sesión"
-              data-tooltip={collapsed ? 'Cerrar sesión' : undefined}
-              className={collapsed ? 'sidebar-tooltip' : ''}
-            >
-              <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(220,38,38,0.14)' }}>
-                <LogOut size={14} style={{ color: '#FCA5A5' }} strokeWidth={2.2} />
-              </div>
-              <AnimatePresence>
-                {!collapsed && (
-                  <motion.span initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-                    style={{ fontSize: 12.5, fontWeight: 600, color: '#FCA5A5', letterSpacing: '0.01em' }}>
-                    Cerrar sesión
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
-          </div>
-        </div>
       </aside>
     </>
   )
