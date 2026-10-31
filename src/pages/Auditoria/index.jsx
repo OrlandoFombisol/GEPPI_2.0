@@ -133,10 +133,15 @@ export default function Page() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <ShieldCheck size={22} className="text-primary-700" strokeWidth={1.8} />
-            Log de Auditoría
+            Auditoría
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            {registros.length} registro{registros.length !== 1 ? 's' : ''} · máx. 1 000 eventos almacenados.
+          <p className="text-sm text-slate-600 mt-1 max-w-2xl">
+            Registro de quién hizo qué y cuándo en la plataforma: entregas de EPP, cambios en la matriz, trabajadores,
+            inspecciones y configuración. Solo se consulta; sirve como evidencia ante la ARL, el Ministerio de Trabajo
+            y las auditorías del SG-SST (Decreto 1072 de 2015). Usa los filtros para buscar por persona, módulo o fecha.
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            {registros.length} registro{registros.length !== 1 ? 's' : ''} · se guardan los últimos 1.000 eventos.
           </p>
         </div>
         <Button variant="ghost" size="sm" iconLeft={RefreshCw} onClick={cargar} disabled={loading}>
