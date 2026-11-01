@@ -181,17 +181,22 @@ export default function Sidebar({ open, onClose }) {
 
       <aside
         className={[
-          'flex flex-col gap-5 z-30 flex-shrink-0 overflow-y-auto p-5',
-          'fixed top-3 left-3 bottom-3 lg:relative lg:top-auto lg:left-auto lg:bottom-auto lg:h-full',
-          'transition-transform duration-300 ease-in-out lg:transition-none',
-          open ? 'translate-x-0' : '-translate-x-[calc(100%+1.5rem)] lg:translate-x-0',
+          'flex flex-col gap-5 z-40 flex-shrink-0 overflow-y-auto p-5 pt-3 lg:pt-5',
+          // Celular y tableta: hoja que sube desde abajo (botón «Más»); computador: menú lateral flotante
+          'fixed inset-x-0 bottom-0 max-h-[85dvh] w-full rounded-t-3xl',
+          'lg:relative lg:inset-auto lg:max-h-none lg:h-full lg:w-64 lg:rounded-3xl',
+          'transition-transform duration-300 ease-out lg:transition-none',
+          open ? 'translate-y-0' : 'translate-y-full lg:translate-y-0',
         ].join(' ')}
         style={{
-          width: 256, maxWidth: 'calc(100vw - 24px)', background: C.fondo, color: C.tenue, borderRadius: 24,
+          background: C.fondo, color: C.tenue, paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
           border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: '0 4px 10px rgba(33,48,83,0.06), 0 24px 48px -20px rgba(33,48,83,0.22)',
         }}
       >
+        {/* Asa de la hoja inferior (solo celular y tableta) */}
+        <div className="lg:hidden mx-auto h-1.5 w-10 shrink-0 rounded-full" style={{ background: 'rgba(255,255,255,0.25)' }} aria-hidden="true" />
+
         {/* ── Marca ─────────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-2 px-1" style={{ color: C.tinta }}>
           <img src={logoPng} alt="" draggable={false} className="h-10 w-10 shrink-0 rounded-xl bg-white object-contain p-1" />

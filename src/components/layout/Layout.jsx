@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar    from './Sidebar'
 import Header     from './Header'
+import MenuInferior from './MenuInferior'
 import PageBanner from '@/components/ui/PageBanner'
 
 function Watermark() {
@@ -85,6 +86,7 @@ export default function Layout() {
       <div className="absolute inset-0 dot-grid opacity-40 pointer-events-none" style={{ zIndex: 0 }} />
 
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <MenuInferior onMas={() => setSidebarOpen(v => !v)} masAbierto={sidebarOpen} />
 
       <div style={{
         flex: 1, minWidth: 0, display: 'flex',
@@ -93,7 +95,7 @@ export default function Layout() {
       }}>
         <Header onMenuClick={() => setSidebarOpen(true)} />
 
-        <main style={{ flex: 1, overflowY: 'auto' }}>
+        <main className="pb-24 lg:pb-0" style={{ flex: 1, overflowY: 'auto' }}>
           {/* Banner universal por módulo con tips SST */}
           <PageBanner />
 

@@ -65,14 +65,6 @@ export default function Header({ onMenuClick }) {
           boxShadow:            '0 1px 12px rgba(27,98,204,0.07), 0 1px 2px rgba(0,0,0,0.04)',
         }}
       >
-        {/* Hamburguesa — móvil */}
-        <button onClick={onMenuClick}
-          className="lg:hidden p-1.5 rounded-lg transition-colors"
-          style={{ color: 'var(--theme-text-mid)' }}
-          aria-label="Abrir menú"
-        >
-          <Menu size={20} />
-        </button>
 
         {/* Logo móvil */}
         <Link to="/dashboard" className="lg:hidden flex items-center gap-2 flex-shrink-0">
