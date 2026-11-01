@@ -5,6 +5,8 @@ import { Modal, Button }      from '@/components/ui'
 export default function AnularModal({ entrega, onConfirmar, onClose, saving = false }) {
   const [motivo, setMotivo] = useState('')
   const [error,  setError]  = useState('')
+  const pendiente = entrega?.estado === 'PENDIENTE'
+  const [devolver, setDevolver] = useState(true)
 
   const handleConfirmar = () => {
     if (motivo.trim().length < 10) {
@@ -12,14 +14,14 @@ export default function AnularModal({ entrega, onConfirmar, onClose, saving = fa
       return
     }
     setError('')
-    onConfirmar(motivo.trim())
+    onConfirmar(motivo.trim(), pendiente || devolver)
   }
 
   return (
     <Modal
       open
       onClose={onClose}
-      title="Anular entrega"
+      title={pendiente ? 'Cancelar acta pendiente' : 'Anular entrega'}
       icon={AlertTriangle} color="#B91C1C"
       size="sm"
       footer={
@@ -36,9 +38,18 @@ export default function AnularModal({ entrega, onConfirmar, onClose, saving = fa
           <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-amber-800">
             La anulación es <strong>irreversible</strong>. El acta quedará marcada como
-            anulada y no podrá reactivarse. El stock <strong>no</strong> se restaura automáticamente.
+            anulada y no podrá reactivarse.
+            {pendiente && <> Como el trabajador no firmó, los EPP vuelven al inventario.</>}
           </p>
         </div>
+
+        {!pendiente && (
+          <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+            <input type="checkbox" checked={devolver} onChange={e => setDevolver(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300" />
+            <span>Devolver los EPP al inventario <span className="text-slate-400">(desmárcalo si el trabajador ya los usó o no los devolvió)</span></span>
+          </label>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">

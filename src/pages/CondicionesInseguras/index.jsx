@@ -5,6 +5,7 @@ import {
   Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
 import { condicionesDB, empresaDB } from '@/db'
+import { hoyISO } from '@/utils/dates'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -33,10 +34,11 @@ const EMPTY = {
   responsable: '',
   prioridad: 'MEDIA',
   estado: 'IDENTIFICADA',
-  fechaIdentificacion: new Date().toISOString().slice(0, 10),
+  fechaIdentificacion: hoyISO(),
   fechaIntervencion: '',
   fechaSeguimiento: '',
   fechaCierre: '',
+  accionCorrectiva: '',
   observaciones: '',
 }
 
@@ -175,6 +177,17 @@ function CondicionModal({ form, set, empresas, onClose, onSave, saving, errs }) 
             </div>
           </div>
 
+          {/* Acción correctiva */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Acción correctiva</label>
+            <textarea value={form.accionCorrectiva || ''}
+              onChange={e => set(f => ({ ...f, accionCorrectiva: e.target.value }))}
+              rows={2}
+              placeholder="Qué se hizo o se hará para eliminar o controlar el riesgo…"
+              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+            />
+          </div>
+
           {/* Observaciones */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1">Observaciones</label>
@@ -283,6 +296,7 @@ export default function Page() {
         fechaIntervencion: raw.fechaIntervencion || null,
         fechaSeguimiento:  raw.fechaSeguimiento  || null,
         fechaCierre:       raw.fechaCierre        || null,
+        accionCorrectiva:  raw.accionCorrectiva?.trim() || null,
       }
       if (id) await condicionesDB.update(id, data)
       else    await condicionesDB.create(data)

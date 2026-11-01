@@ -127,10 +127,12 @@ export default function NuevaEntrega({ onCancelar, onCompletado }) {
       cargo:      datos.cargo,
       epps:       datos.eppItems,
       usuarioId:  user?.id || null,
+      responsable: user?.nombre || null,
     })
 
   // Confirmar entrega (modo firma presencial)
-  const confirmar = async ({ responsable, observaciones }) => {
+  // Si falla, el error lo muestra el paso 4 (el acta no queda a medias: se revierte)
+  const confirmar = async ({ observaciones }) => {
     setSaving(true)
     try {
       const entregaId = await entregaDB.confirmar({
@@ -138,7 +140,7 @@ export default function NuevaEntrega({ onCancelar, onCompletado }) {
         cargo:       datos.cargo,
         epps:        datos.eppItems,
         observaciones,
-        responsable,
+        responsable: user?.nombre || null,
         firmaBase64: datos.firmaBase64,
         usuarioId:   user?.id || null,
       })
@@ -192,6 +194,7 @@ export default function NuevaEntrega({ onCancelar, onCompletado }) {
                 onNext={paso3Next}
                 onAnterior={() => setPaso(2)}
                 onGenerarEntregaPendiente={generarEntregaPendiente}
+                usuarioId={user?.id || null}
               />
             )}
             {paso === 4 && (
@@ -201,6 +204,7 @@ export default function NuevaEntrega({ onCancelar, onCompletado }) {
                 eppItems={datos.eppItems}
                 firmaBase64={datos.firmaBase64}
                 onConfirmar={confirmar}
+                responsable={user?.nombre || '—'}
                 onAnterior={() => setPaso(3)}
                 saving={saving}
               />

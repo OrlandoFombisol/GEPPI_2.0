@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Stethoscope, Plus, Pencil, Trash2, X, Save, Settings2, Upload, Download } from 'lucide-react'
 import { examenMedicoDB, configuracionAlertaDB, trabajadorDB, empresaDB } from '@/db'
 import { parsearExamenesMedicos, descargarFormatoExamenesMedicos } from '@/services/importarExamenesMedicos'
+import { hoyISO } from '@/utils/dates'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ const EMPTY_FORM = {
   trabajadorId: '',
   empresaId: '',
   tipo: 'INGRESO',
-  fechaRealizacion: new Date().toISOString().slice(0, 10),
+  fechaRealizacion: hoyISO(),
   fechaVencimiento: '',
   aptitudLaboral: 'APTO',
   restricciones: '',

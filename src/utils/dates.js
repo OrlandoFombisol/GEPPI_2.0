@@ -45,6 +45,22 @@ export function toISODate(fecha) {
   return format(d, 'yyyy-MM-dd')
 }
 
+/** Fecha de hoy "YYYY-MM-DD" en la hora local (Colombia), no en UTC */
+export function hoyISO() {
+  return format(new Date(), 'yyyy-MM-dd')
+}
+
+/** Año de una fecha "YYYY-MM-DD" sin desfase de zona horaria */
+export function anioDe(fecha) {
+  const d = toDate(fecha)
+  return d ? d.getFullYear() : new Date().getFullYear()
+}
+
+/** Convierte a Date leyendo "YYYY-MM-DD" como día local (new Date() lo lee en UTC) */
+export function aFechaLocal(fecha) {
+  return toDate(fecha)
+}
+
 // ─── CÁLCULOS DE VENCIMIENTO ─────────────────────────────────────────────────
 
 /**

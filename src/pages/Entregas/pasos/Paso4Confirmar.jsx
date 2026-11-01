@@ -4,18 +4,21 @@ import { TEXTO_LEGAL_ENTREGA }   from '@/constants'
 import { Button, AlertBanner }   from '@/components/ui'
 
 // Responsable fijo de entrega EPP — ajustar nomenclatura aquí cuando se defina
-const RESPONSABLE_ENTREGA = 'JAIR MENDOZA PEREZ'
 
 export default function Paso4Confirmar({
   trabajador, cargo, eppItems, firmaBase64,
-  onConfirmar, onAnterior, saving,
+  onConfirmar, onAnterior, saving, responsable,
 }) {
   const [observaciones, setObservaciones] = useState('')
   const [error,         setError]         = useState('')
 
   const handleConfirmar = async () => {
     setError('')
-    await onConfirmar({ responsable: RESPONSABLE_ENTREGA, observaciones: observaciones.trim() })
+    try {
+      await onConfirmar({ observaciones: observaciones.trim() })
+    } catch (e) {
+      setError(`No se pudo registrar la entrega: ${e.message}`)
+    }
   }
 
   return (
@@ -86,7 +89,7 @@ export default function Paso4Confirmar({
           </label>
           <div className="h-9 px-3 rounded-lg border border-slate-200 bg-slate-50 flex items-center
                           text-sm font-semibold text-slate-700 tracking-wide">
-            {RESPONSABLE_ENTREGA}
+            {responsable}
           </div>
         </div>
         <div>

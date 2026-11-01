@@ -2,6 +2,7 @@ import { useForm }    from 'react-hook-form'
 import { GitMerge }   from 'lucide-react'
 import { Modal, FormField, Input, Select, Button } from '@/components/ui'
 import { MODULO, SISTEMA }                         from '@/constants'
+import { hoyISO } from '@/utils/dates'
 
 const MODULOS_OPTS = [
   { value: '',                       label: 'General'           },
@@ -17,7 +18,7 @@ const DEFAULTS = {
   versionNueva:     '',
   codigoDocumento:  SISTEMA.CODIGO_DOCUMENTO,
   modulo:           MODULO.MATRIZ_EPP,
-  fecha:            new Date().toISOString().slice(0, 10),
+  fecha:            hoyISO(),
   descripcionCambio: '',
   responsable:      '',
   cargoResponsable: '',

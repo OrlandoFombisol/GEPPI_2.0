@@ -3,41 +3,9 @@ import { Camera, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 import { checklistDB, vehiculoDB } from '@/db'
 import { supabase }                from '@/lib/supabase'
 import { Button, AlertBanner, BackButton } from '@/components/ui'
+import { hoyISO } from '@/utils/dates'
+import { ITEMS_CHECKLIST } from '@/constants/checklist'
 
-// ─── Ítems del checklist preoperacional ──────────────────────────────────────
-
-const ITEMS_CHECKLIST = [
-  { id: 'estado_general',     grupo: 'General',      label: 'Estado general del vehículo' },
-  { id: 'limpieza',           grupo: 'General',      label: 'Limpieza interior y exterior' },
-  { id: 'luces_delanteras',   grupo: 'Iluminación',  label: 'Luces delanteras (alta y baja)' },
-  { id: 'luces_traseras',     grupo: 'Iluminación',  label: 'Luces traseras y de reversa' },
-  { id: 'direccionales',      grupo: 'Iluminación',  label: 'Direccionales / pitos' },
-  { id: 'frenos_pie',         grupo: 'Frenos',       label: 'Freno de pie (principal)' },
-  { id: 'freno_mano',         grupo: 'Frenos',       label: 'Freno de mano (estacionamiento)' },
-  { id: 'freno_aire',         grupo: 'Frenos',       label: 'Freno de aire' },
-  { id: 'llanta_delantera_i', grupo: 'Llantas',      label: 'Llanta delantera izquierda' },
-  { id: 'llanta_delantera_d', grupo: 'Llantas',      label: 'Llanta delantera derecha' },
-  { id: 'llanta_trasera_i',   grupo: 'Llantas',      label: 'Llanta trasera izquierda' },
-  { id: 'llanta_trasera_d',   grupo: 'Llantas',      label: 'Llanta trasera derecha' },
-  { id: 'llanta_repuesto',    grupo: 'Llantas',      label: 'Llanta de repuesto' },
-  { id: 'espejo_retrovisor',  grupo: 'Visibilidad',  label: 'Espejo retrovisor central' },
-  { id: 'espejo_izquierdo',   grupo: 'Visibilidad',  label: 'Espejo lateral izquierdo' },
-  { id: 'espejo_derecho',     grupo: 'Visibilidad',  label: 'Espejo lateral derecho' },
-  { id: 'vidrios',            grupo: 'Visibilidad',  label: 'Vidrios (sin grietas/roturas)' },
-  { id: 'cinturon_conductor', grupo: 'Seguridad',    label: 'Cinturón de seguridad conductor' },
-  { id: 'cinturon_pasajeros', grupo: 'Seguridad',    label: 'Cinturones de pasajeros' },
-  { id: 'extintor',           grupo: 'Seguridad',    label: 'Extintor (vigente y cargado)' },
-  { id: 'botiquin',           grupo: 'Seguridad',    label: 'Botiquín de primeros auxilios' },
-  { id: 'kit_carretera',      grupo: 'Seguridad',    label: 'Kit de carretera (señales, chaleco)' },
-  { id: 'aceite_motor',       grupo: 'Fluidos',      label: 'Nivel de aceite del motor' },
-  { id: 'agua_radiador',      grupo: 'Fluidos',      label: 'Nivel de agua / líquido refrigerante' },
-  { id: 'liquido_frenos',     grupo: 'Fluidos',      label: 'Nivel de líquido de frenos' },
-  { id: 'combustible',        grupo: 'Fluidos',      label: 'Nivel de combustible' },
-  { id: 'soat',               grupo: 'Documentos',   label: 'SOAT vigente' },
-  { id: 'tecnicomecanica',    grupo: 'Documentos',   label: 'Revisión técnico-mecánica vigente' },
-  { id: 'tarjeta_propiedad',  grupo: 'Documentos',   label: 'Tarjeta de propiedad / circulación' },
-  { id: 'licencia_conduccion',grupo: 'Documentos',   label: 'Licencia de conducción vigente' },
-]
 
 const ESTADOS_ITEM = [
   { value: 'BUENO',    label: 'Bueno',    Icon: CheckCircle2, cls: 'text-green-600 bg-green-50 border-green-200',  clsActive: 'bg-green-600 text-white border-green-600' },
@@ -89,7 +57,7 @@ const TIPOS_VEHICULO = ['Motocarro', 'Camión Grande', 'Camión Pequeño', 'Moto
 // ─── Formulario principal ─────────────────────────────────────────────────────
 
 export default function ChecklistForm({ vehiculos, empresas, onGuardado, onCancelar }) {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = hoyISO()
 
   const [fecha,           setFecha]           = useState(today)
   const [empresaId,       setEmpresaId]       = useState('')

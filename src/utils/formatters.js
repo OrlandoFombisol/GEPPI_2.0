@@ -1,3 +1,4 @@
+import { toISODate, hoyISO } from './dates'
 /**
  * Formatea valor como pesos colombianos.
  * Ej: 12500.5 → "$12.500,50"
@@ -68,7 +69,6 @@ export function truncar(texto, maxLongitud = 50) {
  * Ej: "EPP_12345678_2026-05-28.pdf"
  */
 export function nombreArchivoPDF(cedula, fecha) {
-  const f = fecha ? new Date(fecha) : new Date()
-  const fechaStr = f.toISOString().split('T')[0]
+  const fechaStr = (fecha ? toISODate(fecha) : null) || hoyISO()
   return `EPP_${cedula}_${fechaStr}.pdf`
 }

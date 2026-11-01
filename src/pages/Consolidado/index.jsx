@@ -2,17 +2,18 @@ import { useState, useEffect, useMemo } from 'react'
 import { AlertTriangle, RefreshCw, Download } from 'lucide-react'
 import { detalleEntregaDB, entregaDB, trabajadorDB, cargoDB, eppDB, empresaDB, sedeDB } from '@/db'
 import { DIAS_ALERTA }   from '@/constants'
-import { formatearFecha } from '@/utils/dates'
+import { formatearFecha, diasParaVencimiento } from '@/utils/dates'
+import { mapaDetallesVigentes } from '@/utils/eppVigente'
 import { Badge, Button, Card, DataTable } from '@/components/ui'
 import * as XLSX from 'xlsx'
+import { hoyISO } from '@/utils/dates'
 
 // ─── Estado según ciclo de vida ──────────────────────────────────────────────
 
 function calcularEstado(fechaVencimiento) {
   if (!fechaVencimiento) return 'SIN_FECHA'
-  const hoy    = new Date()
-  const vence  = new Date(fechaVencimiento)
-  const dias   = Math.ceil((vence - hoy) / 86400000)
+  // Misma fórmula que Alertas y Reportes (día calendario local)
+  const dias   = diasParaVencimiento(fechaVencimiento)
   if (dias < 0)                    return 'VENCIDO'
   if (dias <= DIAS_ALERTA.CRITICO) return 'REQUIERE_REPOSICION'
   if (dias <= DIAS_ALERTA.ADVERTENCIA) return 'PROXIMO_VENCER'
@@ -25,6 +26,7 @@ const ESTADO_LABEL = {
   REQUIERE_REPOSICION: 'Requiere reposición',
   VENCIDO:             'Vencido',
   SIN_FECHA:           'Sin fecha registrada',
+  REEMPLAZADO:         'Reemplazado',
 }
 const ESTADO_VARIANT = {
   VIGENTE:             'success',
@@ -32,6 +34,7 @@ const ESTADO_VARIANT = {
   REQUIERE_REPOSICION: 'danger',
   VENCIDO:             'danger',
   SIN_FECHA:           'neutral',
+  REEMPLAZADO:         'neutral',
 }
 
 // ─── Columnas ────────────────────────────────────────────────────────────────
@@ -110,19 +113,21 @@ export default function Page() {
       const empresaMap    = Object.fromEntries((empresas || []).map(e => [e.id, e.razonSocial]))
       const sedeMap       = Object.fromEntries((sedes   || []).map(s => [s.id, s.nombre]))
 
+      // El EPP que cuenta es el de la última acta firmada; los anteriores quedan como «Reemplazado»
+      const vigentes = mapaDetallesVigentes(entregas, detalles)
+
       const rows = []
       for (const d of (detalles || [])) {
         const entrega = entregaMap[d.entregaId]
-        if (!entrega || entrega.estado === 'ANULADA') continue
+        if (!entrega || entrega.estado !== 'FIRMADA') continue
 
         const trab    = trabMap[entrega.trabajadorId]
         if (!trab) continue
 
         const epp     = eppMap[d.eppId]
-        const estado  = calcularEstado(d.fechaVencimiento)
-        const diasRestantes = d.fechaVencimiento
-          ? Math.ceil((new Date(d.fechaVencimiento) - new Date()) / 86400000)
-          : null
+        const reemplazado = vigentes.get(`${entrega.trabajadorId}-${d.eppId}`)?.detalle.id !== d.id
+        const estado  = reemplazado ? 'REEMPLAZADO' : calcularEstado(d.fechaVencimiento)
+        const diasRestantes = reemplazado ? null : diasParaVencimiento(d.fechaVencimiento)
 
         const empresaNombre = empresaMap[trab.empresaId] || empresaMap[entrega.empresaId] || '—'
         const sedeNombre    = trab.sedeId
@@ -177,6 +182,7 @@ export default function Page() {
     proximoVencer:     filas.filter(f => f.estado === 'PROXIMO_VENCER').length,
     requiereReposicion:filas.filter(f => f.estado === 'REQUIERE_REPOSICION').length,
     vencido:           filas.filter(f => f.estado === 'VENCIDO').length,
+    reemplazado:       filas.filter(f => f.estado === 'REEMPLAZADO').length,
   }), [filas])
 
   const exportarExcel = () => {
@@ -197,7 +203,7 @@ export default function Page() {
     const ws = XLSX.utils.json_to_sheet(datos)
     ws['!cols'] = Array(11).fill({ wch: 22 })
     XLSX.utils.book_append_sheet(wb, ws, 'Consolidado EPP')
-    XLSX.writeFile(wb, `CONSOLIDADO_EPP_${new Date().toISOString().slice(0,10)}.xlsx`)
+    XLSX.writeFile(wb, `CONSOLIDADO_EPP_${hoyISO()}.xlsx`)
   }
 
   const FILTROS = [
@@ -206,6 +212,7 @@ export default function Page() {
     { key: 'PROXIMO_VENCER',     label: `Próximo a vencer (${stats.proximoVencer})`,    cls: 'text-yellow-700' },
     { key: 'REQUIERE_REPOSICION',label: `Requiere reposición (${stats.requiereReposicion})`, cls: 'text-orange-700' },
     { key: 'VENCIDO',            label: `Vencido (${stats.vencido})`,                   cls: 'text-red-700'    },
+    { key: 'REEMPLAZADO',        label: `Reemplazado (${stats.reemplazado})`,           cls: 'text-slate-500'  },
   ]
 
   return (

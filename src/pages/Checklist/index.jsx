@@ -8,6 +8,7 @@ import ChecklistForm   from './ChecklistForm'
 import ChecklistDetalle from './ChecklistDetalle'
 import QrAccesoModal   from './QrAccesoModal'
 import * as XLSX from 'xlsx'
+import { hoyISO } from '@/utils/dates'
 
 // ─── Columnas tabla ───────────────────────────────────────────────────────────
 
@@ -137,7 +138,7 @@ export default function Page() {
     const ws = XLSX.utils.json_to_sheet(datos)
     ws['!cols'] = Array(8).fill({ wch: 22 })
     XLSX.utils.book_append_sheet(wb, ws, 'Checklist')
-    XLSX.writeFile(wb, `CHECKLIST_PREOPERACIONAL_${new Date().toISOString().slice(0,10)}.xlsx`)
+    XLSX.writeFile(wb, `CHECKLIST_PREOPERACIONAL_${hoyISO()}.xlsx`)
   }
 
   if (cargandoDetalle) {

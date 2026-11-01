@@ -6,6 +6,7 @@ import { formatearFecha, formatearFechaLarga } from '@/utils/dates'
 import { formatearNumeroActa }                 from '@/utils/formatters'
 import { formatearNIT }                        from '@/utils/validators'
 import { vidaUtilLabel }                       from '@/pages/MatrizEPP/utils'
+import { anioDe } from '@/utils/dates'
 
 // ─── Paleta de colores (RGB) ──────────────────────────────────────────────────
 const C = {
@@ -61,7 +62,7 @@ async function dibujarEncabezado(doc, { empresa, entrega }) {
   doc.text((empresa?.razonSocial || SISTEMA.EMPRESA_CLIENTE).toUpperCase(), PW / 2, 16.5, { align: 'center' })
 
   doc.setFontSize(8)
-  const nro = formatearNumeroActa(entrega.id, new Date(entrega.fechaEntrega).getFullYear())
+  const nro = formatearNumeroActa(entrega.id, anioDe(entrega.fechaEntrega))
   doc.text(`${SISTEMA.CODIGO_DOCUMENTO} · Versión ${SISTEMA.VERSION_MATRIZ}`, ML, 25)
   doc.text(`Acta N° ${nro}`, PW - MR, 25, { align: 'right' })
 

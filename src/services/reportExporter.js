@@ -6,10 +6,11 @@ import {
 import { calcularEstadoEPP, formatearFecha, formatearFechaHora } from '@/utils/dates'
 import { ESTADO_EPP_LABEL, ESTADO_STOCK_LABEL, TIPO_CONTRATO, SISTEMA } from '@/constants'
 import { formatearNumeroActa } from '@/utils/formatters'
+import { hoyISO, anioDe } from '@/utils/dates'
 
 // ─── Helpers internos ─────────────────────────────────────────────────────────
 
-const hoy    = () => new Date().toISOString().slice(0, 10)
+const hoy    = () => hoyISO()
 const ahora  = () => new Date().toLocaleString('es-CO')
 
 const CONTRATO_LABEL = Object.fromEntries(TIPO_CONTRATO.map(t => [t.value, t.label]))
@@ -95,7 +96,7 @@ export async function generarReporteEntregas({ sedeId, desde, hasta } = {}) {
     const trab    = trabMap[ent.trabajadorId] || {}
     const items   = detMap[ent.id] || []
     const baseRow = {
-      'Acta N°':         formatearNumeroActa(ent.id, new Date(ent.fechaEntrega).getFullYear()),
+      'Acta N°':         formatearNumeroActa(ent.id, anioDe(ent.fechaEntrega)),
       'Fecha entrega':   formatearFecha(ent.fechaEntrega),
       'Estado entrega':  ent.estado,
       'Cédula':          trab.cedula || '—',

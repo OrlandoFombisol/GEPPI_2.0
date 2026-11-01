@@ -1,5 +1,7 @@
 import { useState, useEffect }      from 'react'
-import { Loader2, Ban }              from 'lucide-react'
+import { Loader2, Ban, QrCode, Copy } from 'lucide-react'
+import QRCode                        from 'qrcode'
+import { useUser }                   from '@/contexts/UserContext'
 import { detalleEntregaDB, firmaDB, eppDB, entregaDB } from '@/db'
 import { ESTADO_EPP_LABEL }          from '@/constants'
 import { calcularEstadoEPP, formatearFecha, formatearFechaHora } from '@/utils/dates'
@@ -7,6 +9,7 @@ import { formatearNumeroActa, obtenerIniciales } from '@/utils/formatters'
 import { Modal, Badge, Button }      from '@/components/ui'
 import BotonPDF                      from '@/components/pdf/BotonPDF'
 import AnularModal                   from './AnularModal'
+import { anioDe } from '@/utils/dates'
 
 // ─── Fila EPP con semáforo ────────────────────────────────────────────────────
 function FilaEPP({ detalle, epp }) {
@@ -48,6 +51,13 @@ export default function DetalleEntrega({ entrega, onClose, onAnulada }) {
   const [cargando,  setCargando]  = useState(true)
   const [salvando,  setSalvando]  = useState(false)
   const [modalAnular, setModalAnular] = useState(false)
+  const [errorAnular, setErrorAnular] = useState('')
+  const [qrImg,       setQrImg]       = useState(null)
+  const [copiado,     setCopiado]     = useState(false)
+  const { user } = useUser()
+  const esPendiente = entrega.estado === 'PENDIENTE'
+  const urlFirma = esPendiente && entrega.tokenAceptacion
+    ? `${window.location.origin}/aceptar/${entrega.tokenAceptacion}` : null
 
   useEffect(() => {
     if (entrega?.id) cargarDatos()
@@ -73,19 +83,28 @@ export default function DetalleEntrega({ entrega, onClose, onAnulada }) {
   const eppMap = Object.fromEntries(epps.map(e => [e.id, e]))
   const esFirmada = entrega.estado === 'FIRMADA'
 
-  const handleAnular = async (motivo) => {
-    setSalvando(true)
+  // Retomar un acta pendiente: el mismo QR para que el trabajador firme
+  const mostrarQR = async () => {
+    if (!urlFirma) return
+    setQrImg(await QRCode.toDataURL(urlFirma, { width: 240, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } }))
+  }
+
+  const handleAnular = async (motivo, devolverStock) => {
+    setSalvando(true); setErrorAnular('')
     try {
-      await entregaDB.anular(entrega.id, motivo, 1)
+      await entregaDB.anular(entrega.id, motivo, user?.id || null, { devolverStock })
       setModalAnular(false)
       onAnulada?.()
       onClose()
+    } catch (e) {
+      setModalAnular(false)
+      setErrorAnular(`No se pudo anular el acta: ${e.message}`)
     } finally {
       setSalvando(false)
     }
   }
 
-  const acta = formatearNumeroActa(entrega.id, new Date(entrega.fechaEntrega).getFullYear())
+  const acta = formatearNumeroActa(entrega.id, anioDe(entrega.fechaEntrega))
 
   return (
     <>
@@ -97,7 +116,7 @@ export default function DetalleEntrega({ entrega, onClose, onAnulada }) {
         footer={
           <div className="flex items-center justify-between w-full flex-wrap gap-2">
             <div className="flex items-center gap-2">
-              {esFirmada && (
+              {(esFirmada || esPendiente) && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -105,7 +124,7 @@ export default function DetalleEntrega({ entrega, onClose, onAnulada }) {
                   onClick={() => setModalAnular(true)}
                   className="text-red-600 hover:bg-red-50"
                 >
-                  Anular
+                  {esPendiente ? 'Cancelar acta' : 'Anular'}
                 </Button>
               )}
             </div>
@@ -139,6 +158,25 @@ export default function DetalleEntrega({ entrega, onClose, onAnulada }) {
             </Badge>
             {entrega.pdfGenerado && <Badge variant="success" size="sm">PDF generado</Badge>}
           </div>
+
+          {errorAnular && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-800">{errorAnular}</div>
+          )}
+
+          {urlFirma && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-900 space-y-3">
+              <p><strong>Falta la firma del trabajador.</strong> Puede firmar escaneando el QR con su celular, o cancela el acta para devolver los EPP al inventario.</p>
+              {qrImg
+                ? <img src={qrImg} alt="QR para firmar" className="w-48 h-48 rounded-xl mx-auto shadow" />
+                : <Button size="sm" iconLeft={QrCode} onClick={mostrarQR}>Mostrar el QR para firmar</Button>}
+              <button
+                onClick={() => { navigator.clipboard.writeText(urlFirma); setCopiado(true); setTimeout(() => setCopiado(false), 2000) }}
+                className="flex items-center gap-2 text-xs bg-white border border-amber-300 px-3 py-1.5 rounded-lg hover:bg-amber-100 font-medium"
+              >
+                <Copy size={13} /> {copiado ? '¡Enlace copiado!' : 'Copiar enlace para WhatsApp'}
+              </button>
+            </div>
+          )}
 
           {entrega.estado === 'ANULADA' && entrega.motivoAnulacion && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-800">

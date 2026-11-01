@@ -17,6 +17,36 @@ const AÑO_BASE  = new Date().getFullYear()
 const AÑOS      = [AÑO_BASE - 1, AÑO_BASE, AÑO_BASE + 1]
 
 const PERIODICIDADES = ['Mensual','Trimestral','Semestral','Anual']
+
+// Columnas según la periodicidad; el dato de cada período se guarda en su último mes
+function periodosDe(periodicidad) {
+  const tam = { Trimestral: 3, Semestral: 6, Anual: 12 }[periodicidad] || 1
+  const nombres = { 3: ['I TRIM','II TRIM','III TRIM','IV TRIM'], 6: ['I SEM','II SEM'], 12: ['AÑO'] }[tam]
+  return Array.from({ length: 12 / tam }, (_, i) => ({
+    label: tam === 1 ? MESES[i] : nombres[i],
+    mes:   (i + 1) * tam,
+    meses: Array.from({ length: tam }, (_, j) => i * tam + j + 1),
+  }))
+}
+
+// Valor del período: el de su último mes; si está vacío, la suma de los meses del período (datos viejos)
+function datoDePeriodo(datos, p, campo) {
+  const v = datos[p.mes]?.[campo]
+  if (v !== null && v !== undefined) return v
+  const vals = p.meses.map(m => datos[m]?.[campo]).filter(x => x !== null && x !== undefined)
+  return vals.length ? vals.reduce((a, b) => a + Number(b), 0) : null
+}
+
+// Cumplimiento acumulado del año: total ejecutadas / total programadas
+function cumplimientoAcumulado(filas) {
+  let ej = 0, pr = 0
+  for (const f of (filas || [])) {
+    if (f.programadas > 0 && f.ejecutadas !== null && f.ejecutadas !== undefined) {
+      ej += Number(f.ejecutadas); pr += Number(f.programadas)
+    }
+  }
+  return pr > 0 ? Math.round((ej / pr) * 100) : null
+}
 const TIPOS_IND      = ['Proceso','Resultado','Gestión','Eficacia','Eficiencia','Efectividad']
 
 const AZUL_SST = '#1B3A6B'
@@ -212,20 +242,21 @@ function FichaTecnica({ indicador, año, onAñoChange, datos, onDatoChange, plan
   const [editPlanForm, setEditPlanForm] = useState({})
   const [savingPlan, setSavingPlan] = useState(false)
 
-  // Calcular seguimiento mensual
+  const periodos = useMemo(() => periodosDe(indicador.periodicidad), [indicador.periodicidad])
+
+  // Calcular seguimiento por período
   const seguimiento = useMemo(() =>
-    MESES.map((_, i) => {
-      const mes = i + 1
-      const d   = datos[mes]
-      if (!d || d.programadas === null || d.programadas === undefined || d.programadas === 0) return null
-      if (d.ejecutadas === null || d.ejecutadas === undefined) return null
-      return Math.round((d.ejecutadas / d.programadas) * 100)
+    periodos.map(p => {
+      const prog = datoDePeriodo(datos, p, 'programadas')
+      const ejec = datoDePeriodo(datos, p, 'ejecutadas')
+      if (!prog || ejec === null) return null
+      return Math.round((ejec / prog) * 100)
     }),
-    [datos]
+    [datos, periodos]
   )
 
   // Datos para la gráfica
-  const chartData = MESES.map((m, i) => ({
+  const chartData = periodos.map(({ label: m }, i) => ({
     mes: m,
     pct: seguimiento[i],
     meta: indicador.meta,
@@ -344,7 +375,7 @@ function FichaTecnica({ indicador, año, onAñoChange, datos, onDatoChange, plan
                 <td className="px-3 py-2 text-[11px] font-bold text-slate-500 bg-slate-50 border-b border-r border-slate-200">
                   Variables
                 </td>
-                {MESES.map(m => (
+                {periodos.map(({ label: m }) => (
                   <td key={m} className="text-center text-[11px] font-bold text-white py-2 border-b border-r border-slate-300 last:border-r-0"
                     style={{ background: AZUL_SST }}>
                     {m}
@@ -358,12 +389,12 @@ function FichaTecnica({ indicador, año, onAñoChange, datos, onDatoChange, plan
                 <td className="px-3 py-2 text-[11px] font-semibold text-slate-600 bg-slate-50 border-b border-r border-slate-200 uppercase">
                   {indicador.nombreNumerador || 'NUMERADOR'}
                 </td>
-                {MESES.map((_, i) => {
-                  const mes = i + 1
+                {periodos.map(p => {
+                  const mes = p.mes
                   return (
                     <td key={mes} className="text-center border-b border-r border-slate-100 last:border-r-0 p-0.5">
                       <CeldaDato
-                        value={datos[mes]?.ejecutadas ?? ''}
+                        value={datoDePeriodo(datos, p, 'ejecutadas') ?? ''}
                         onChange={v => onDatoChange(mes, 'ejecutadas', v)}
                       />
                     </td>
@@ -376,12 +407,12 @@ function FichaTecnica({ indicador, año, onAñoChange, datos, onDatoChange, plan
                 <td className="px-3 py-2 text-[11px] font-semibold text-slate-600 bg-slate-50 border-b border-r border-slate-200 uppercase">
                   {indicador.nombreDenominador || 'DENOMINADOR'}
                 </td>
-                {MESES.map((_, i) => {
-                  const mes = i + 1
+                {periodos.map(p => {
+                  const mes = p.mes
                   return (
                     <td key={mes} className="text-center border-b border-r border-slate-100 last:border-r-0 p-0.5">
                       <CeldaDato
-                        value={datos[mes]?.programadas ?? ''}
+                        value={datoDePeriodo(datos, p, 'programadas') ?? ''}
                         onChange={v => onDatoChange(mes, 'programadas', v)}
                       />
                     </td>
@@ -392,7 +423,7 @@ function FichaTecnica({ indicador, año, onAñoChange, datos, onDatoChange, plan
               {/* Fila seguimiento mensual (calculado) */}
               <tr className="bg-slate-50">
                 <td className="px-3 py-2 text-[11px] font-bold text-slate-700 border-r border-slate-200 uppercase">
-                  Seguimiento mensual
+                  Seguimiento {indicador.periodicidad === 'Mensual' || !indicador.periodicidad ? 'mensual' : indicador.periodicidad.toLowerCase()}
                 </td>
                 {seguimiento.map((pct, i) => (
                   <td key={i} className="text-center border-r border-slate-100 last:border-r-0 py-2">
@@ -685,12 +716,16 @@ export default function Page() {
     [indicadores, selectedId]
   )
 
-  // Promedio de seguimiento del año para las tarjetas
+  // Cumplimiento acumulado del año para las tarjetas
+  const [datosAño, setDatosAño] = useState([])
+  useEffect(() => {
+    datoIndicadorDB.getByAño(selectedAño).then(setDatosAño).catch(() => setDatosAño([]))
+  }, [selectedAño, datos])
   const pctPorIndicador = useMemo(() => {
-    // Para cada indicador, necesitaríamos cargar datos.
-    // Simplificado: mostramos null (se muestra — en la tarjeta)
-    return {}
-  }, [indicadores])
+    const porInd = {}
+    for (const d of datosAño) (porInd[d.indicadorId] ||= []).push(d)
+    return Object.fromEntries(Object.entries(porInd).map(([id, filas]) => [id, cumplimientoAcumulado(filas)]))
+  }, [datosAño])
 
   // ── Handlers de datos mensuales ──────────────────────────────────────────
   const handleDatoChange = useCallback(async (mes, campo, valor) => {

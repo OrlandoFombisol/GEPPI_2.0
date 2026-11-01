@@ -515,7 +515,8 @@ export default function Page() {
   const [loading,   setLoading]   = useState(true)
   const [generando, setGenerando] = useState(false)
   const [msgNuevas, setMsgNuevas] = useState(null)
-  const [tab,       setTab]       = useState('sistema')
+  const [errorGen,  setErrorGen]  = useState('')
+  const [tab,      setTab]       = useState('sistema')
 
   const [filtroLeida, setFiltroLeida] = useState('NO_LEIDAS')
   const [filtroNivel, setFiltroNivel] = useState('TODOS')
@@ -556,12 +557,16 @@ export default function Page() {
   }
 
   const handleGenerar = async () => {
-    setGenerando(true); setMsgNuevas(null)
+    setGenerando(true); setMsgNuevas(null); setErrorGen('')
     try {
       const [n1, n2] = await Promise.all([generarAlertas(), generarAlertasExamenes()])
       setMsgNuevas(n1 + n2)
+    } catch (e) {
+      setErrorGen(`No se pudieron generar las alertas: ${e.message}`)
+    } finally {
       await cargar()
-    } finally { setGenerando(false) }
+      setGenerando(false)
+    }
   }
 
   const SELECT_CLS = `h-8 px-2.5 rounded-lg border border-slate-300 text-xs bg-white
@@ -624,6 +629,7 @@ export default function Page() {
           closable
         />
       )}
+      {errorGen && <AlertBanner level="danger" message={errorGen} closable />}
 
       {/* Tabs */}
       <div className="flex items-center gap-1 border-b border-slate-200">

@@ -9,6 +9,7 @@ import {
 } from 'recharts'
 import * as XLSX from 'xlsx'
 import { hallazgoDB, empresaDB } from '@/db'
+import { hoyISO } from '@/utils/dates'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -51,7 +52,7 @@ const EMPTY = {
   empresaId:        '',
   centroDeTrabajo:  '',
   area:             '',
-  fechaEmision:     new Date().toISOString().slice(0, 10),
+  fechaEmision:     hoyISO(),
   descripcion:      '',
   correccion:       '',
   tipoAccion:       'AM',
@@ -521,7 +522,7 @@ export default function Page() {
     const ws = XLSX.utils.aoa_to_sheet([...encabezado, ...filas])
     ws['!cols'] = [22, 14, 14, 50, 50, 10, 22, 14, 10, 30, 14, 6, 6, 12].map(w => ({ wch: w }))
     XLSX.utils.book_append_sheet(wb, ws, 'SEGUIMIENTO HALLAZGOS')
-    XLSX.writeFile(wb, `MT-SST-013_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    XLSX.writeFile(wb, `MT-SST-013_${hoyISO()}.xlsx`)
   }
 
   const abrirNuevo  = () => { setErrs({}); setModal({ open: true, form: { ...EMPTY } }) }

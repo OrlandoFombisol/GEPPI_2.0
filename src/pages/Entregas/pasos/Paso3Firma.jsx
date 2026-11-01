@@ -2,10 +2,10 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import { FirmaCanvas }  from '@/components/firma'
 import { Button }       from '@/components/ui'
 import { entregaDB }    from '@/db'
-import { QrCode, Copy, CheckCircle2, Loader2 } from 'lucide-react'
+import { QrCode, Copy, CheckCircle2, Loader2, X } from 'lucide-react'
 import QRCode from 'qrcode'
 
-export default function Paso3Firma({ trabajador, cargo, eppItems, onNext, onAnterior, onGenerarEntregaPendiente }) {
+export default function Paso3Firma({ trabajador, cargo, eppItems, onNext, onAnterior, onGenerarEntregaPendiente, usuarioId }) {
   const firmaRef   = useRef(null)
   const [hasFirma, setHasFirma] = useState(false)
   // Lo normal es que el trabajador firme en su celular escaneando el QR; la firma en pantalla es la alterna
@@ -16,6 +16,7 @@ export default function Paso3Firma({ trabajador, cargo, eppItems, onNext, onAnte
   const [qrData,      setQrData]      = useState(null)  // { entregaId, token, url, imgUrl }
   const [firmada,     setFirmada]     = useState(false)
   const [copiado,     setCopiado]     = useState(false)
+  const [cancelando,  setCancelando]  = useState(false)
 
   // ── Firma presencial ─────────────────────────────────────────────────────────
   const handleSiguiente = () => {
@@ -57,6 +58,26 @@ export default function Paso3Firma({ trabajador, cargo, eppItems, onNext, onAnte
     }, 3000)
     return () => clearInterval(interval)
   }, [qrData, firmada, onNext])
+
+  // ── Cancelar QR: anula el acta pendiente y devuelve el stock ─────────────────
+  const cancelarQR = async () => {
+    if (!qrData) return
+    setCancelando(true)
+    try {
+      const estado = await entregaDB.cancelarPendiente(qrData.entregaId, usuarioId)
+      if (estado === 'FIRMADA') {
+        // Firmó justo antes de cancelar: se respeta la firma
+        setFirmada(true)
+        onNext({ modoQR: true, entregaId: qrData.entregaId })
+        return
+      }
+      setQrData(null)
+    } catch (e) {
+      alert('No se pudo cancelar el QR: ' + e.message)
+    } finally {
+      setCancelando(false)
+    }
+  }
 
   // ── Copiar enlace ────────────────────────────────────────────────────────────
   const copiarLink = () => {
@@ -160,6 +181,9 @@ export default function Paso3Firma({ trabajador, cargo, eppItems, onNext, onAnte
                 <Loader2 size={15} className="animate-spin flex-shrink-0" />
                 Esperando que <strong className="mx-1">{trabajador.nombres}</strong> firme…
               </div>
+              <p className="text-[11px] text-slate-400 text-center">
+                Si sales de esta pantalla, el acta queda pendiente en el Historial y desde ahí puedes volver a mostrar el QR o cancelarla.
+              </p>
             </>
           )}
 
@@ -179,9 +203,10 @@ export default function Paso3Firma({ trabajador, cargo, eppItems, onNext, onAnte
               ← Anterior
             </Button>
             {qrData && !firmada && (
-              <span className="text-xs text-slate-400 self-center italic">
-                Esperando firma remota…
-              </span>
+              <Button variant="ghost" iconLeft={X} onClick={cancelarQR} loading={cancelando}
+                className="text-red-600 hover:bg-red-50">
+                Cancelar QR
+              </Button>
             )}
           </div>
         </div>

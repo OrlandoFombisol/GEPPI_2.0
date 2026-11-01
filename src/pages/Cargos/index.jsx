@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx'
 import { cargoDB, trabajadorDB, asignacionDB, empresaDB } from '@/db'
 import { Badge, Button, Card, DataTable, Modal } from '@/components/ui'
 import CargoModal from '@/pages/MatrizCargos/CargoModal'
+import { hoyISO } from '@/utils/dates'
 
 function descargarFormatoCargos(empresas) {
   const wb = XLSX.utils.book_new()
@@ -34,7 +35,7 @@ async function parseCargosDesdeExcel(file) {
 }
 
 function exportarListadoCargos(cargos) {
-  const fecha = new Date().toISOString().slice(0, 10)
+  const fecha = hoyISO()
   const filas = cargos.map(c => ({
     'Nombre del cargo': c.nombre,
     'Nivel':            c.nivel || '—',

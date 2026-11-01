@@ -6,6 +6,7 @@ import { formatearFecha }                  from '@/utils/dates'
 import { formatearNumeroActa }             from '@/utils/formatters'
 import { Badge, Button, Card, DataTable }  from '@/components/ui'
 import NuevaEntrega                        from './NuevaEntrega'
+import { anioDe } from '@/utils/dates'
 
 // ─── Columnas del historial rápido ────────────────────────────────────────────
 
@@ -14,7 +15,7 @@ const COLUMNAS = [
     key: 'id', label: 'Acta', sortable: true, width: 'w-36',
     render: (v, row) => (
       <span className="font-mono text-xs font-bold text-primary-800">
-        {formatearNumeroActa(v, new Date(row.fechaEntrega).getFullYear())}
+        {formatearNumeroActa(v, anioDe(row.fechaEntrega))}
       </span>
     ),
   },

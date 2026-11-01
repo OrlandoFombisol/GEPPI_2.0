@@ -9,6 +9,7 @@ import { formatearFecha, formatearFechaLarga }             from '@/utils/dates'
 import { formatearNumeroActa }                             from '@/utils/formatters'
 import { FirmaCanvas }                                     from '@/components/firma'
 import { SISTEMA }                                         from '@/constants'
+import { anioDe } from '@/utils/dates'
 
 const logoPng = '/logo.jpg'
 
@@ -108,12 +109,15 @@ export default function AceptarEntrega() {
       if (!acta) { setError('El enlace no es válido o ha expirado.'); setFase('error'); return }
       const { entrega, trabajador, cargo, sede, empresa, detalles } = acta
       if (entrega.estado === 'FIRMADA') { setFase('ya_firmada'); return }
+      if (entrega.estado === 'ANULADA') {
+        setError('Esta acta fue cancelada por el responsable de SST. Pídele que te muestre un QR nuevo.'); setFase('error'); return
+      }
 
       const epps = detalles.map(d => ({ ...d, eppNombre: d.eppNombre || '—', esDotacion: d.esDotacion || false }))
 
       setDatos({
         entrega, trabajador, cargo, sede, empresa, epps,
-        nroActa: formatearNumeroActa(entrega.id, new Date(entrega.fechaEntrega).getFullYear()),
+        nroActa: formatearNumeroActa(entrega.id, anioDe(entrega.fechaEntrega)),
       })
       setFase('datos')
     } catch {

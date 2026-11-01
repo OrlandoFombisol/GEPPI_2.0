@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx'
+import { hoyISO } from '@/utils/dates'
 
 // ─── Helpers internos ─────────────────────────────────────────────────────────
 
@@ -214,7 +215,7 @@ function parseGestionCambio(ws) {
 
     cambios.push({
       version:          col.version     >= 0 ? normalizar(row[col.version])     : `00${i}`,
-      fecha:            fechaStr || new Date().toISOString().slice(0, 10),
+      fecha:            fechaStr || hoyISO(),
       descripcion:      col.descripcion >= 0 ? normalizar(row[col.descripcion]) : '',
       responsable:      col.responsable >= 0 ? normalizar(row[col.responsable]) : '',
       cargoResponsable: col.cargo       >= 0 ? normalizar(row[col.cargo])       : '',

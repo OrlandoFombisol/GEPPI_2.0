@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Camera, X, Save, CheckCircle2, XCircle, MinusCircle, ChevronRight, ChevronLeft } from 'lucide-react'
 import { inspeccionDB, planTrabajoDB } from '@/db'
 import { TIPOS_INSPECCION, ITEMS_POR_TIPO } from './items'
+import { hoyISO } from '@/utils/dates'
 
 async function comprimirFoto(file) {
   return new Promise((resolve, reject) => {
@@ -83,7 +84,7 @@ function ItemInspeccion({ item, resultado, accionTipo, accionDescripcion, onChan
 export default function InspeccionForm({ empresas = [], actividadesPAT = [], usuarioId, onGuardado, onCancelar, onExtintores }) {
   const [tipo,        setTipo]        = useState('')
   const [empresaId,   setEmpresaId]   = useState('')
-  const [fecha,       setFecha]       = useState(new Date().toISOString().slice(0, 10))
+  const [fecha,       setFecha]       = useState(hoyISO())
   const [inspector,   setInspector]   = useState('')
   const [planId,      setPlanId]      = useState('')
   const [foto,        setFoto]        = useState(null)

@@ -1,6 +1,7 @@
 import { supabase }                          from '@/lib/supabase'
 import { fromDB, manyFromDB, toDB, fromDBInventario } from '@/lib/mappers'
 import { ESTADO_STOCK }                       from '@/constants'
+import { hoyISO, toISODate } from '@/utils/dates'
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  UTILIDAD INTERNA
@@ -249,9 +250,12 @@ export const trabajadorDB = {
     return manyFromDB(data)
   },
   async buscar(texto) {
+    // Comas, paréntesis y comodines rompen el filtro .or() de PostgREST
+    const t = String(texto ?? '').replace(/[,()%*\\]/g, ' ').trim()
+    if (!t) return []
     const data = await q('trabajador.buscar',
       supabase.from('trabajador').select('*')
-        .or(`nombres.ilike.%${texto}%,apellidos.ilike.%${texto}%,cedula.ilike.%${texto}%`))
+        .or(`nombres.ilike.%${t}%,apellidos.ilike.%${t}%,cedula.ilike.%${t}%`))
     return manyFromDB(data)
   },
   async create(data) {
@@ -316,19 +320,24 @@ export const inventarioDB = {
     await q('inventario.update', supabase.from('inventario').update(dbData).eq('id', id))
   },
   async ajustarStock(eppId, sedeId, delta, tipo, meta = {}) {
+    if (!sedeId) throw new Error('Falta la sede o bodega desde donde se mueve el inventario.')
     let registro = await this.getStockActual(eppId, sedeId)
 
     if (!registro) {
-      const id = await this.create({ eppId, sedeId, stockActual: Math.max(0, delta), stockMinimo: 5 })
-      registro = { id, stockActual: Math.max(0, delta), stockMinimo: 5, eppId, sedeId }
+      if (delta < 0) throw new Error('No hay inventario de este EPP en la sede elegida.')
+      const id = await this.create({ eppId, sedeId, stockActual: 0, stockMinimo: 5 })
+      registro = { id, stockActual: 0, stockMinimo: 5, eppId, sedeId }
     }
 
     const saldoAnterior  = registro.stockActual
-    const saldoPosterior = Math.max(0, saldoAnterior + delta)
+    const saldoPosterior = saldoAnterior + delta
+    if (saldoPosterior < 0) {
+      throw new Error(`Stock insuficiente: hay ${saldoAnterior} y se intentan sacar ${Math.abs(delta)}.`)
+    }
 
     await this.update(registro.id, { stockActual: saldoPosterior })
 
-    const { data: mov } = await supabase.from('movimiento_inventario').insert({
+    const mov = await one('inventario.kardex', supabase.from('movimiento_inventario').insert({
       inventario_id:          registro.id,
       epp_id:                 eppId,
       sede_id:                sedeId,
@@ -337,7 +346,7 @@ export const inventarioDB = {
       referencia_entrega_id:  meta.entregaId  || null,
       observacion:            meta.motivo     || null,
       usuario_id:             meta.usuarioId  || null,
-    }).select('id').single()
+    }).select('id').single())
 
     return { saldoPosterior, movimientoId: mov?.id }
   },
@@ -403,85 +412,95 @@ export const entregaDB = {
       supabase.from('entrega').select('*').eq('token_aceptacion', token).single())
     return fromDB(data)
   },
-  async crearPendiente({ trabajador, cargo, epps, usuarioId }) {
-    const token = crypto.randomUUID()
-    const entregaRow = await one('entrega.crearPendiente',
-      supabase.from('entrega').insert({
-        trabajador_id:    trabajador.id,
-        cargo_id:         cargo.id,
-        sede_id:          trabajador.sedeId,
-        empresa_id:       trabajador.empresaId,
-        fecha_entrega:    new Date().toISOString().slice(0, 10),
-        estado:           'PENDIENTE',
-        token_aceptacion: token,
-        usuario_id:       usuarioId || null,
-      }).select('id').single())
+  // Cabecera + detalle + descuento de inventario. Si algo falla a mitad de camino,
+  // se devuelve lo descontado y el acta queda ANULADA (no quedan actas a medias).
+  async _registrar(ctx, { trabajador, cargo, epps, usuarioId, cabecera }) {
+    const entregaRow = await one(ctx, supabase.from('entrega').insert({
+      trabajador_id:      trabajador.id,
+      cargo_id:           cargo.id,
+      sede_id:            trabajador.sedeId,
+      empresa_id:         trabajador.empresaId,
+      fecha_entrega:      hoyISO(),
+      usuario_id:         usuarioId || null,
+      ...cabecera,
+    }).select('id').single())
     const entregaId = entregaRow.id
-    for (const item of epps) {
-      await q('entrega.crearPendiente.detalle',
-        supabase.from('detalle_entrega').insert({
-          entrega_id:        entregaId,
-          epp_id:            item.eppId,
-          cantidad:          item.cantidad,
-          fecha_vencimiento: item.fechaVencimiento || null,
-          observacion:       item.observaciones    || null,
-        }))
-      await inventarioDB.ajustarStock(
-        item.eppId, trabajador.sedeId, -item.cantidad, 'SALIDA',
-        { entregaId, usuarioId }
-      )
+    const descontados = []
+    try {
+      for (const item of epps) {
+        await q(ctx + '.detalle',
+          supabase.from('detalle_entrega').insert({
+            entrega_id:        entregaId,
+            epp_id:            item.eppId,
+            cantidad:          item.cantidad,
+            fecha_vencimiento: item.fechaVencimiento || null,
+            observacion:       item.observaciones    || null,
+          }))
+        await inventarioDB.ajustarStock(
+          item.eppId, trabajador.sedeId, -item.cantidad, 'SALIDA',
+          { entregaId, usuarioId }
+        )
+        descontados.push(item)
+      }
+    } catch (e) {
+      await this._revertir(entregaId, trabajador.sedeId, descontados, usuarioId, 'Error al guardar el acta: ' + e.message)
+      throw e
     }
+    return entregaId
+  },
+  async _revertir(entregaId, sedeId, items, usuarioId, motivo) {
+    for (const item of items) {
+      try {
+        await inventarioDB.ajustarStock(item.eppId, sedeId, item.cantidad, 'ENTRADA',
+          { entregaId, usuarioId, motivo: `Devolución: ${motivo}` })
+      } catch (e) { console.error('[GEPPI DB] devolución de stock', e) }
+    }
+    await supabase.from('entrega').update({
+      estado: 'ANULADA', motivo_anulacion: motivo, fecha_anulacion: new Date().toISOString(),
+    }).eq('id', entregaId)
+  },
+  async crearPendiente({ trabajador, cargo, epps, usuarioId, responsable }) {
+    const token = crypto.randomUUID()
+    const entregaId = await this._registrar('entrega.crearPendiente', {
+      trabajador, cargo, epps, usuarioId,
+      cabecera: { estado: 'PENDIENTE', token_aceptacion: token, responsable_nombre: responsable || null },
+    })
     return { entregaId, token }
   },
   async confirmar({ trabajador, cargo, epps, observaciones, responsable, firmaBase64, usuarioId }) {
-    // 1. Crear entrega
-    const entregaRow = await one('entrega.confirmar.cabecera',
-      supabase.from('entrega').insert({
-        trabajador_id:      trabajador.id,
-        cargo_id:           cargo.id,
-        sede_id:            trabajador.sedeId,
-        empresa_id:         trabajador.empresaId,
-        fecha_entrega:      new Date().toISOString().slice(0, 10),
-        estado:             'FIRMADA',
-        observaciones:      observaciones || null,
-        usuario_id:         usuarioId || null,
-      }).select('id').single())
-    const entregaId = entregaRow.id
-
-    // 2. Detalle + descuento inventario
-    for (const item of epps) {
-      await q('entrega.confirmar.detalle',
-        supabase.from('detalle_entrega').insert({
-          entrega_id:       entregaId,
-          epp_id:           item.eppId,
-          cantidad:         item.cantidad,
-          fecha_vencimiento: item.fechaVencimiento || null,
-          observacion:      item.observaciones    || null,
+    const entregaId = await this._registrar('entrega.confirmar', {
+      trabajador, cargo, epps, usuarioId,
+      cabecera: { estado: 'FIRMADA', observaciones: observaciones || null, responsable_nombre: responsable || null },
+    })
+    try {
+      await q('entrega.confirmar.firma',
+        supabase.from('firma').insert({
+          entrega_id:   entregaId,
+          firma_base64: firmaBase64,
+          fecha_captura: new Date().toISOString(),
+          dispositivo:  navigator.userAgent || 'Desconocido',
         }))
-      await inventarioDB.ajustarStock(
-        item.eppId, trabajador.sedeId, -item.cantidad, 'SALIDA',
-        { entregaId, usuarioId }
-      )
+    } catch (e) {
+      await this._revertir(entregaId, trabajador.sedeId, epps, usuarioId, 'No se guardó la firma: ' + e.message)
+      throw e
     }
-
-    // 3. Firma
-    await q('entrega.confirmar.firma',
-      supabase.from('firma').insert({
-        entrega_id:   entregaId,
-        firma_base64: firmaBase64,
-        fecha_captura: new Date().toISOString(),
-        dispositivo:  navigator.userAgent || 'Desconocido',
-      }))
-
     return entregaId
   },
-  async anular(id, motivo) {
-    await q('entrega.anular',
-      supabase.from('entrega').update({
-        estado:           'ANULADA',
-        observaciones:    motivo,
-        fecha_aceptacion: new Date().toISOString(),
-      }).eq('id', id))
+  // Anula el acta y devuelve al inventario los EPP que se habían descontado
+  async anular(id, motivo, usuarioId, { devolverStock = true } = {}) {
+    const entrega = await this.getById(id)
+    if (!entrega) throw new Error('El acta no existe.')
+    if (entrega.estado === 'ANULADA') return
+    const detalles = devolverStock ? await detalleEntregaDB.getPorEntrega(id) : []
+    await this._revertir(id, entrega.sedeId, detalles.map(d => ({ eppId: d.eppId, cantidad: d.cantidad })),
+      usuarioId, motivo)
+  },
+  // QR que el trabajador no firmó: se anula y el stock vuelve
+  async cancelarPendiente(id, usuarioId) {
+    const entrega = await this.getById(id)
+    if (entrega?.estado !== 'PENDIENTE') return entrega?.estado
+    await this.anular(id, 'Firma por QR cancelada antes de que el trabajador firmara', usuarioId)
+    return 'ANULADA'
   },
   async marcarPdfGenerado(id) {
     // campo legacy — no existe en v2, ignorar silenciosamente
@@ -526,7 +545,7 @@ export const detalleEntregaDB = {
     const data = await q('detalle.getProximosAVencer',
       supabase.from('detalle_entrega').select('*')
         .not('fecha_vencimiento', 'is', null)
-        .lte('fecha_vencimiento', limite.toISOString().slice(0, 10)))
+        .lte('fecha_vencimiento', toISODate(limite)))
     return manyFromDB(data)
   },
 }
@@ -562,10 +581,12 @@ export const alertaDB = {
     const { count } = await supabase.from('alerta').select('id', { count: 'exact', head: true }).eq('leida', false)
     return count || 0
   },
-  async existeAlertaActiva(tipo, referenciaId) {
-    const { count } = await supabase.from('alerta').select('id', { count: 'exact', head: true })
-      .eq('tipo', tipo).eq('referencia_id', String(referenciaId)).eq('leida', false)
-    return (count || 0) > 0
+  async actualizar(id, data) {
+    await q('alerta.actualizar', supabase.from('alerta').update(toDB(data)).eq('id', id))
+  },
+  async marcarLeidas(ids) {
+    if (!ids?.length) return
+    await q('alerta.marcarLeidas', supabase.from('alerta').update({ leida: true }).in('id', ids))
   },
   async create(data) {
     const row = await one('alerta.create',
@@ -1055,6 +1076,11 @@ export const indicadorDB = {
 }
 
 export const datoIndicadorDB = {
+  async getByAño(año) {
+    const data = await q('dato.getByAño',
+      supabase.from('dato_indicador').select('*').eq('año', año))
+    return manyFromDB(data)
+  },
   async getByIndicadorAño(indicadorId, año) {
     const data = await q('dato.getByIndicadorAño',
       supabase.from('dato_indicador').select('*').eq('indicador_id', indicadorId).eq('año', año))

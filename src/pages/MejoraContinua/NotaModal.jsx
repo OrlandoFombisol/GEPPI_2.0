@@ -2,9 +2,10 @@ import { useForm } from 'react-hook-form'
 import { NotebookPen } from 'lucide-react'
 import { Modal, FormField, Input, Textarea, Select, DateInput, Button } from '@/components/ui'
 import { TIPO_NOTA_MEJORA, TIPO_NOTA_MEJORA_LABEL } from '@/constants'
+import { hoyISO } from '@/utils/dates'
 
 const DEFAULTS = {
-  fecha:   new Date().toISOString().slice(0, 10),
+  fecha:   hoyISO(),
   tipo:    TIPO_NOTA_MEJORA.ANALISIS,
   titulo:  '',
   detalle: '',

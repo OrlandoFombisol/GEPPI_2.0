@@ -5,7 +5,8 @@ import {
   trabajadorDB, entregaDB, inventarioDB, detalleEntregaDB,
   alertaDB, eppDB, sedeDB, empresaDB,
 } from '@/db'
-import { calcularEstadoEPP, diasParaVencimiento } from '@/utils/dates'
+import { calcularEstadoEPP, diasParaVencimiento, aFechaLocal } from '@/utils/dates'
+import { detallesVigentes } from '@/utils/eppVigente'
 import { ESTADO_EPP, ESTADO_EPP_LABEL, NIVEL_ALERTA } from '@/constants'
 
 export function useDashboardData() {
@@ -36,18 +37,19 @@ export function useDashboardData() {
 
       // ── KPIs ─────────────────────────────────────────────────────────────
       const trabajadoresActivos = (trabajadores || []).filter(t => t.estado === 'ACTIVO').length
-      const entregasEsteMes     = (entregas     || []).filter(e =>
-        e.fechaEntrega && new Date(e.fechaEntrega) >= inicioMes
+      const entregasValidas     = (entregas || []).filter(e => e.estado !== 'ANULADA')
+      const entregasEsteMes     = entregasValidas.filter(e =>
+        e.fechaEntrega && aFechaLocal(e.fechaEntrega) >= inicioMes
       ).length
 
-      const ahora = Date.now()
-      const lim30 = ahora + 30 * 86400000
+      // Solo el EPP vigente de cada trabajador activo (sin anuladas, pendientes ni reemplazados)
+      const vigentes = detallesVigentes(entregas, detalles, trabajadores).map(v => v.detalle)
       let eppVencidos = 0, eppProximos = 0
-      ;(detalles || []).forEach(d => {
+      vigentes.forEach(d => {
         if (!d.fechaVencimiento) return
-        const fv = new Date(d.fechaVencimiento).getTime()
-        if (fv < ahora)  eppVencidos++
-        else if (fv <= lim30) eppProximos++
+        const estado = calcularEstadoEPP(d.fechaVencimiento)
+        if (estado === ESTADO_EPP.VENCIDO) eppVencidos++
+        else if (estado === ESTADO_EPP.PROXIMO_VENCER) eppProximos++
       })
 
       const stockCritico   = (inventario || []).filter(i =>
@@ -60,15 +62,15 @@ export function useDashboardData() {
         const mes = subMonths(new Date(), 5 - i)
         return {
           mes:      format(mes, 'MMM yy', { locale: es }),
-          cantidad: (entregas || []).filter(e =>
-            e.fechaEntrega && isSameMonth(new Date(e.fechaEntrega), mes)
+          cantidad: entregasValidas.filter(e =>
+            e.fechaEntrega && isSameMonth(aFechaLocal(e.fechaEntrega), mes)
           ).length,
         }
       })
 
       // ── Chart 2: Estado semáforo de EPP entregados (Pie) ─────────────────
       const estadosCount = { VIGENTE: 0, PROXIMO_VENCER: 0, VENCIDO: 0, SIN_ENTREGA: 0 }
-      ;(detalles || []).forEach(d => {
+      vigentes.forEach(d => {
         const estado = calcularEstadoEPP(d.fechaVencimiento)
         estadosCount[estado] = (estadosCount[estado] || 0) + 1
       })
@@ -112,7 +114,7 @@ export function useDashboardData() {
       const entregaMap = Object.fromEntries(
         (entregas || []).map(e => [e.id, e])
       )
-      const eppProximosLista = (detalles || [])
+      const eppProximosLista = vigentes
         .filter(d => {
           if (!d.fechaVencimiento) return false
           const estado = calcularEstadoEPP(d.fechaVencimiento)
@@ -149,7 +151,7 @@ export function useDashboardData() {
           eppProximos,
           stockCritico,
           alertasNoLeidas,
-          totalEntregas:   (entregas || []).length,
+          totalEntregas:   entregasValidas.length,
           totalEPP:        (epps     || []).filter(e => e.estado === 'ACTIVO').length,
         },
         chartEntregas,
