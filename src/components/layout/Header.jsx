@@ -56,12 +56,12 @@ export default function Header({ onMenuClick }) {
   return (
     <>
       <header
-        className="sticky top-0 z-10 h-14 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 lg:rounded-2xl lg:mb-4"
+        className="sticky top-0 z-10 h-14 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 rounded-2xl mb-3 lg:mb-4"
         style={{
           background:           'var(--theme-header-bg)',
           backdropFilter:       'blur(16px) saturate(1.8)',
           WebkitBackdropFilter: 'blur(16px) saturate(1.8)',
-          borderBottom:         '1px solid var(--theme-border)',
+          border:               '1px solid var(--theme-border)',
           boxShadow:            '0 1px 12px rgba(27,98,204,0.07), 0 1px 2px rgba(0,0,0,0.04)',
         }}
       >

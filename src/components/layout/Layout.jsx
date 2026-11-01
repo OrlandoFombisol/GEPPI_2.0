@@ -76,7 +76,7 @@ export default function Layout() {
 
   return (
     // En escritorio la barra lateral flota: margen alrededor y separación con el contenido
-    <div className="lg:p-4 lg:gap-4" style={{
+    <div className="p-3 lg:p-4 lg:gap-4" style={{
       display: 'flex', height: '100vh', overflow: 'hidden',
       position: 'relative',
       background: 'var(--theme-bg)',
@@ -84,12 +84,7 @@ export default function Layout() {
       <Watermark />
       <div className="absolute inset-0 dot-grid opacity-40 pointer-events-none" style={{ zIndex: 0 }} />
 
-      <Sidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        collapsed={sidebarCollapsed}
-        onToggle={toggleCollapse}
-      />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div style={{
         flex: 1, minWidth: 0, display: 'flex',
