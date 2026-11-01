@@ -222,6 +222,9 @@ function ModalImportarTrabajadores({ cargos, sedes, empresas, onImportados, onCl
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 
+// Cuántos cargos se muestran como botones rápidos antes de «+N cargos más»
+const CHIPS_VISIBLES = 8
+
 export default function Page() {
   const [trabajadores, setTrabajadores] = useState([])
   const [cargos,       setCargos]       = useState([])
@@ -237,6 +240,7 @@ export default function Page() {
   const [confirmar,   setConfirmar]  = useState(null)
   const [importar,    setImportar]   = useState(false)
   const [filtroCargo, setFiltroCargo] = useState(null)
+  const [verTodosCargos, setVerTodosCargos] = useState(false)
 
   useEffect(() => { cargar() }, [])
   useEffect(() => { setFiltroCargo(null) }, [filtro])
@@ -428,13 +432,13 @@ export default function Page() {
                          focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
             >
               <option value="">Todos los cargos</option>
-              {chipsCargo.map(c => (
+              {[...chipsCargo].sort((a, b) => (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es')).map(c => (
                 <option key={c.id} value={c.id}>{c.nombre} ({c.count})</option>
               ))}
             </select>
 
-            {/* Chips — visibles solo sin filtro activo */}
-            {!filtroCargo && chipsCargo.map(chip => (
+            {/* Chips — visibles solo sin filtro activo; los 8 cargos más numerosos, el resto a demanda */}
+            {!filtroCargo && (verTodosCargos ? chipsCargo : chipsCargo.slice(0, CHIPS_VISIBLES)).map(chip => (
               <button
                 key={chip.id}
                 onClick={() => setFiltroCargo(chip.id)}
@@ -449,6 +453,16 @@ export default function Page() {
                 </span>
               </button>
             ))}
+
+            {!filtroCargo && chipsCargo.length > CHIPS_VISIBLES && (
+              <button
+                onClick={() => setVerTodosCargos(v => !v)}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold
+                           text-primary-700 hover:bg-primary-50 transition-colors"
+              >
+                {verTodosCargos ? 'Ver menos' : `+${chipsCargo.length - CHIPS_VISIBLES} cargos más`}
+              </button>
+            )}
 
             {/* Botón limpiar */}
             {filtroCargo && (
