@@ -56,7 +56,7 @@ export default function Header({ onMenuClick }) {
   return (
     <>
       <header
-        className="sticky top-0 z-10 h-14 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5"
+        className="sticky top-0 z-10 h-14 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-5 lg:rounded-2xl lg:mb-4"
         style={{
           background:           'var(--theme-header-bg)',
           backdropFilter:       'blur(16px) saturate(1.8)',

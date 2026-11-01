@@ -75,7 +75,8 @@ export default function Layout() {
   }
 
   return (
-    <div style={{
+    // En escritorio la barra lateral flota: margen alrededor y separación con el contenido
+    <div className="lg:p-4 lg:gap-4" style={{
       display: 'flex', height: '100vh', overflow: 'hidden',
       position: 'relative',
       background: 'var(--theme-bg)',

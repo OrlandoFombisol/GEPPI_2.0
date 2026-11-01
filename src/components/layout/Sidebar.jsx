@@ -369,8 +369,8 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
 
       <aside
         className={[
-          'flex flex-col h-full z-30 flex-shrink-0',
-          'fixed top-0 left-0 lg:relative',
+          'flex flex-col lg:h-full z-30 flex-shrink-0',
+          'fixed top-3 left-3 bottom-3 lg:relative lg:top-auto lg:left-auto lg:bottom-auto',
           'transition-transform duration-300 ease-in-out lg:transition-none',
           open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         ].join(' ')}
@@ -379,12 +379,16 @@ export default function Sidebar({ open, onClose, collapsed, onToggle }) {
           transition: 'width 0.28s cubic-bezier(0.4,0,0.2,1), transform 0.3s ease-in-out',
           background: 'var(--theme-sidebar-bg)',
           overflow: 'visible',
-          borderRight: '1px solid rgba(255,255,255,0.05)',
+          borderRadius: 24,
+          border: '1px solid rgba(255,255,255,0.06)',
+          boxShadow: '0 12px 32px rgba(33,48,83,0.28), 0 2px 6px rgba(0,0,0,0.12)',
         }}
       >
-        {/* Decos de fondo */}
-        <div style={{ position: 'absolute', top: -60, left: -40, width: 180, height: 180, borderRadius: '50%', pointerEvents: 'none', zIndex: 0, background: 'radial-gradient(circle,rgba(27,98,204,0.16),transparent 70%)' }} />
-        <div style={{ position: 'absolute', bottom: 60, right: -20, width: 140, height: 140, borderRadius: '50%', pointerEvents: 'none', zIndex: 0, background: 'radial-gradient(circle,rgba(57,181,74,0.08),transparent 70%)' }} />
+        {/* Decos de fondo (recortadas a las esquinas redondeadas) */}
+        <div style={{ position: 'absolute', inset: 0, borderRadius: 24, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+          <div style={{ position: 'absolute', top: -60, left: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle,rgba(27,98,204,0.16),transparent 70%)' }} />
+          <div style={{ position: 'absolute', bottom: 60, right: -20, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle,rgba(57,181,74,0.08),transparent 70%)' }} />
+        </div>
 
         {/* Toggle desktop */}
         <motion.button onClick={onToggle} whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.88 }}
