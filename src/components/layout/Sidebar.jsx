@@ -264,8 +264,9 @@ function NavItem({ item, onClose, collapsed, badges = {} }) {
 
 // ─── Encabezado de sección colapsable (Opción A: etiqueta plana tipo VS Code) ──
 function SectionHeader({ label, sectionColor, open, onToggle, hasActive }) {
-  const lineColor = hasActive ? `${sectionColor}35` : 'rgba(255,255,255,0.07)'
-  const textColor = hasActive ? sectionColor : 'rgba(255,255,255,0.28)'
+  // La sección donde estás se resalta en ámbar de marca (igual para todas las secciones)
+  const lineColor = hasActive ? 'rgba(255,183,27,0.45)' : 'rgba(255,255,255,0.07)'
+  const textColor = hasActive ? '#FFB71B' : 'rgba(255,255,255,0.28)'
   return (
     <button
       onClick={onToggle}
